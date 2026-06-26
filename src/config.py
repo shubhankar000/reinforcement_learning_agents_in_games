@@ -4,37 +4,78 @@ Generic config class to be used by all learner classes.
 
 from dataclasses import dataclass, field
 import gymnasium as gym
+import json
+
 
 DEFAULT_SEED = 67
 
 
+class BaseConfig:
+    def to_dict(self) -> dict:
+        """
+        Plain-python dict of all public attributes, recursing into nested configs.
+        """
+        return {
+            key: self._encode(value)
+            for key, value in vars(self).items()
+            if not key.startswith("_")  # skip _env and friends
+        }
+
+    @staticmethod
+    def _encode(value):
+        if isinstance(value, BaseConfig):  # nested config -> recurse
+            return value.to_dict()
+        if isinstance(value, (list, tuple)):
+            return [BaseConfig._encode(v) for v in value]
+        if isinstance(value, dict):
+            return {k: BaseConfig._encode(v) for k, v in value.items()}
+        return value  # int / float / str / bool / None
+
+    def json(self, **kwargs) -> str:
+        """
+        Serialize to a JSON string. Extra kwargs pass through to json.dumps
+        """
+        return json.dumps(self.to_dict(), default=str, **kwargs)
+
+
 @dataclass
-class RunConfig:
+class ToyTextRunConfig(BaseConfig):
     """
     Configuration when running.
     Example:
         seed
     """
 
-    seed: int = field(default=DEFAULT_SEED)
+    master_seed: int = field(default=DEFAULT_SEED)
     lr: float = field(default_factory=float)
-    episodes: int = field(default=10)
+    step_budget: int = field(default=100_000)
+    n_runs: int = field(default=10)
+    checkpoint_every: int = field(default=1000)
 
 
 @dataclass
-class ToyTextAlgoConfig:
+class ToyTextAlgoConfig(BaseConfig):
     epsilon: float = field(default=0.1)
     "Epsilon value for e-greedy. Range [0, 1). 0 greedy, 1 random"
 
     gamma: float = field(default=0.95)
     "Discount factor, controles sightedness of the agent"
 
+    e_floor: float = field(default=0.01)
+    "epsilon never drops below this value while training"
 
-class ToyTextEnvConfig:
+    decay_steps: int = field(default=50_000)
+    "Steps ramp from epsilon -> e_floor in decay_steps"
+
+
+class ToyTextEnvConfig(BaseConfig):
     def __init__(
-        self, env: gym.Env, action_space: gym.spaces.Discrete, obs_space: gym.spaces.Discrete
+        self,
+        env: gym.Env,
+        action_space: gym.spaces.Discrete,
+        obs_space: gym.spaces.Discrete,
     ):
-        self.env: gym.Env = env
+        self._env: gym.Env = env
         self.action_space = int(action_space.n)
         self.obs_space = int(obs_space.n)
 
@@ -49,15 +90,15 @@ class ToyTextEnvConfig:
 
 
 @dataclass
-class Config:
-    run_config: RunConfig = field(default_factory=RunConfig)
+class Config(BaseConfig):
+    run_config: ToyTextRunConfig = field(default_factory=ToyTextRunConfig)
     env_config: ToyTextEnvConfig | None = field(default=None)
     algo_config: ToyTextAlgoConfig | None = field(default=None)
 
 
 if __name__ == "__main__":
-    run_config = RunConfig()
-    run_config_42 = RunConfig(seed=42)
+    run_config = ToyTextRunConfig()
+    run_config_42 = ToyTextRunConfig(master_seed=42)
     env = gym.make("CartPole-v1")
 
     config = Config(
@@ -65,4 +106,6 @@ if __name__ == "__main__":
     )
 
     print(run_config, run_config_42, config)
-    print(run_config_42.seed, run_config.seed, config.run_config.seed)
+    print(
+        run_config_42.master_seed, run_config.master_seed, config.run_config.master_seed
+    )
