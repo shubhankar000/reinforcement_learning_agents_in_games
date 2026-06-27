@@ -96,6 +96,29 @@ class QTabularLearner:
         return np.max(self.qtable, axis=1)
 
 
+def create_checkpoint_steps(budget, chkpt_type, n_points, start):
+    """
+    Create checkpoint list based on the budget, type, #of points and start
+    """
+    if chkpt_type == "linear":
+        # linear silently drops start to reach the budget
+        every = budget // n_points
+        points = list(range(every, budget + 1, every))
+
+        return points
+
+    elif chkpt_type == "log":
+        points = np.unique(
+            np.round(np.geomspace(start, budget, n_points)).astype("int")
+        )
+        return list(points)
+
+    else:
+        raise ValueError(
+            f"Unknown checkpoint type {chkpt_type}. Only `linear` and `log` available"
+        )
+
+
 def run_one_seed(
     agent: QTabularLearner,
     config: Config,
@@ -107,15 +130,17 @@ def run_one_seed(
     next_chkpt = 0
     td_sum, td_count = 0.0, 0
     snapshots, rows = [], []
-    chkpt_every = config.run_config.checkpoint_every
-    checkpoints = list(
-        range(chkpt_every, config.run_config.step_budget + 1, chkpt_every)
+    checkpoints = create_checkpoint_steps(
+        config.run_config.step_budget,
+        config.run_config.checkpoint_type,
+        config.run_config.checkpoint_points,
+        10,
     )
     episodes = 0
     visitation = np.zeros((config.env_config.obs_space, config.env_config.action_space))
 
     total_steps = 0
-    obs, _ = env.reset()
+    obs, _ = env.reset(seed=env_seed)
     pbar = tqdm(total=config.run_config.step_budget)
 
     while total_steps < config.run_config.step_budget:
@@ -128,7 +153,7 @@ def run_one_seed(
 
         action = agent.action(obs, eps)
 
-        new_obs, reward, terminated, truncated, info = env.step(action)
+        new_obs, reward, terminated, truncated, _ = env.step(action)
 
         done = terminated or truncated
 
@@ -136,6 +161,8 @@ def run_one_seed(
 
         td_sum += abs(delta)
         td_count += 1
+
+        visitation[obs, action] += 1
 
         obs = new_obs
 
@@ -156,7 +183,7 @@ def run_one_seed(
             next_chkpt += 1
 
         if done:
-            obs, _ = env.reset(seed=env_seed)
+            obs, _ = env.reset()
             episodes += 1
 
     pbar.close()
@@ -165,6 +192,7 @@ def run_one_seed(
         out / "snapshots.npz",
         snapshots=np.array(snapshots),
         steps=np.array(checkpoints),
+        visitation=np.array(visitation),
     )
     pd.DataFrame(rows).to_parquet(out / "train_log.parquet")
 
@@ -216,8 +244,11 @@ def main(
     n_runs: int = typer.Option(
         default=10, help="How many seeded runs to run the agent in the environment."
     ),
-    checkpoint_every: int = typer.Option(
-        default=1000, help="How often to checkpoint the agent for later analysis"
+    checkpoint_points: int = typer.Option(
+        default=100, help="How often to checkpoint the agent for later analysis"
+    ),
+    checkpoint_type: str = typer.Option(
+        default="linear", help="Options are `linear`, `log`"
     ),
 ):
     env = gym.make(
@@ -226,7 +257,7 @@ def main(
         map_name="4x4",
         # render_mode="human",
         reward_schedule=(1, 0, 0),  # [reward_goal,  reward_hole, reward_frozen]
-        is_slippery=False,
+        is_slippery=True,
     )
 
     # initialize the config
@@ -236,7 +267,8 @@ def main(
             lr=lr,
             step_budget=step_budget,
             n_runs=n_runs,
-            checkpoint_every=checkpoint_every,
+            checkpoint_points=checkpoint_points,
+            checkpoint_type=checkpoint_type,
         ),
         env_config=ToyTextEnvConfig.from_gym_env(env),
         algo_config=ToyTextAlgoConfig(

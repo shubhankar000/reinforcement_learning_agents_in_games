@@ -50,7 +50,8 @@ class ToyTextRunConfig(BaseConfig):
     lr: float = field(default_factory=float)
     step_budget: int = field(default=100_000)
     n_runs: int = field(default=10)
-    checkpoint_every: int = field(default=1000)
+    checkpoint_points: int = field(default=100)
+    checkpoint_type: str = field(default="linear")
 
 
 @dataclass
@@ -78,6 +79,8 @@ class ToyTextEnvConfig(BaseConfig):
         self._env: gym.Env = env
         self.action_space = int(action_space.n)
         self.obs_space = int(obs_space.n)
+        self.env_id = env.spec.id
+        self.env_kwargs = dict(env.spec.kwargs)
 
     @classmethod
     def from_gym_env(cls, env: gym.Env):

@@ -53,6 +53,5 @@ if __name__ == "__main__":
     )
     Q, V = value_iteration(env.unwrapped.P, 0.95)
 
-    np.savez("./src/tabular/q_star_slippery", Q, V)
+    np.savez("./src/tabular/q_v_star_frozenlake_slippery", q_star=Q, v_star=V)
 
-# %%
