@@ -199,7 +199,7 @@ def run_one_seed(
 
 def run_experiment(env: gym.Env, config: Config, out: Path = "."):
     timestamp = datetime.now().strftime("%Y-%m-%d-%I-%M-%S-%p")
-    experiment_dir = out / "FrozenLake" / timestamp
+    experiment_dir = out / config.env_config.env_id / timestamp
     experiment_dir.mkdir(parents=True, exist_ok=True)
 
     with open(experiment_dir / "meta.json", "w") as f:
@@ -248,17 +248,18 @@ def main(
         default=100, help="How often to checkpoint the agent for later analysis"
     ),
     checkpoint_type: str = typer.Option(
-        default="linear", help="Options are `linear`, `log`"
+        default="log", help="Options are `linear`, `log`"
+    ),
+    env_id: str = typer.Option(
+        default="FrozenLake-v1", help="Gym environment string id"
+    ),
+    env_kwargs: str = typer.Option(
+        default='{"map_name":"4x4","is_slippery":true,"reward_schedule":[1,0,0]}',
+        help="JSON string of kwargs passed into gym.make",
     ),
 ):
-    env = gym.make(
-        "FrozenLake-v1",
-        desc=None,
-        map_name="4x4",
-        # render_mode="human",
-        reward_schedule=(1, 0, 0),  # [reward_goal,  reward_hole, reward_frozen]
-        is_slippery=True,
-    )
+    env_kwargs: dict = json.loads(env_kwargs)
+    env = gym.make(env_id, **env_kwargs)
 
     # initialize the config
     config = Config(

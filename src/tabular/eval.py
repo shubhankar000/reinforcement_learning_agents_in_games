@@ -4,6 +4,7 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 import pandas as pd
+from src.config import ToyTextEnvConfig
 
 from src.rng_factory import SeededRNG
 
@@ -27,10 +28,21 @@ def evaluate(path: Path, eval_master_seed: int = 67):
     gamma = meta["algo_config"]["gamma"]
 
     env_kwargs = meta["env_config"]["env_kwargs"]
-    is_slippery = env_kwargs["is_slippery"]
+    is_slippery = env_kwargs.get("is_slippery", False) or env_kwargs.get(
+        "is_rainy", False
+    )
     type_ = "slippery" if is_slippery else "nonslippery"
 
-    q_v_star = np.load(f"./src/tabular/q_v_star_frozenlake_{type_}.npz")
+    env_config = ToyTextEnvConfig.from_gym_env(
+        gym.make(meta["env_config"]["env_id"], **env_kwargs)
+    )
+
+    slip = bool(env_config.env_kwargs.get("is_slippery", False)) or env_kwargs.get(
+        "is_rainy", False
+    )
+    key = f"{env_config.env_id}_{'slip' if slip else 'det'}"
+
+    q_v_star = np.load(f"./src/tabular/optimal_values/q_v_star_{key}.npz")
     q_star = q_v_star["q_star"]
     v_star = q_v_star["v_star"]
     all_evals = []
@@ -95,4 +107,4 @@ def evaluate(path: Path, eval_master_seed: int = 67):
 
 
 if __name__ == "__main__":
-    evaluate(Path("./runs/FrozenLake"))
+    evaluate(Path("./runs/FrozenLake-v1"))
