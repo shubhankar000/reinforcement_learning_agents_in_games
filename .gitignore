@@ -224,3 +224,4 @@ libs/
 results/
 *.pdf
 .vscode
+docs/
