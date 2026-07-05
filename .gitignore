@@ -225,3 +225,6 @@ results/
 *.pdf
 .vscode
 docs/
+
+# TODO unblock run arteafter public publishing
+runs/
