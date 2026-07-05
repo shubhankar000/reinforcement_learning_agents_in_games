@@ -12,7 +12,7 @@ import gymnasium as gym
 import numpy as np
 
 from src.config import ToyTextEnvConfig
-from src.tabular.validation import value_iteration
+from src.tabular.validation import value_iteration, policy_evaluation
 
 ENVS = ["FrozenLake-v1", "CliffWalking-v1", "Taxi-v4"]
 ENV_KWARGS = [{"map_name": "4x4", "reward_schedule": [1, 0, 0]}, {}, {}]
@@ -44,13 +44,14 @@ def main(out: Path):
             )
             Q, V = value_iteration(env.unwrapped.P, 0.95)
             env_config = ToyTextEnvConfig.from_gym_env(env)
+            V_random = policy_evaluation(env.unwrapped.P, 0.95)
 
             slip = bool(env_config.env_kwargs.get("is_slippery", False)) or bool(
                 env_config.env_kwargs.get("is_rainy", False)
             )
             key = f"{env_config.env_id}_{'slip' if slip else 'det'}"
 
-            np.savez(out / f"q_v_star_{key}", q_star=Q, v_star=V)
+            np.savez(out / f"q_v_star_{key}", q_star=Q, v_star=V, v_random=V_random)
 
 
 if __name__ == "__main__":

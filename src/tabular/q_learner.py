@@ -12,7 +12,7 @@ import gymnasium as gym
 import numpy as np
 import pandas as pd
 import typer
-from tqdm.auto import tqdm, trange
+from tqdm.auto import trange
 
 from src.config import (
     DEFAULT_SEED,
@@ -137,11 +137,12 @@ def run_one_seed(
         10,
     )
     episodes = 0
+    ep_returns = 0.0
+    window_returns = []
     visitation = np.zeros((config.env_config.obs_space, config.env_config.action_space))
 
     total_steps = 0
     obs, _ = env.reset(seed=env_seed)
-    pbar = tqdm(total=config.run_config.step_budget)
 
     while total_steps < config.run_config.step_budget:
         eps = epsilon_schedule(
@@ -161,13 +162,13 @@ def run_one_seed(
 
         td_sum += abs(delta)
         td_count += 1
+        ep_returns += reward
 
         visitation[obs, action] += 1
 
         obs = new_obs
 
         total_steps += 1
-        pbar.update(1)
 
         if next_chkpt < len(checkpoints) and total_steps >= checkpoints[next_chkpt]:
             snapshots.append(agent.qtable.copy())
@@ -177,16 +178,21 @@ def run_one_seed(
                     "episode": episodes,
                     "mean_td_error": td_sum / max(td_count, 1),
                     "epsilon": eps,
+                    "train_return_mean": float(np.mean(window_returns))
+                    if window_returns
+                    else np.nan,
                 }
             )
             td_sum, td_count = 0.0, 0
             next_chkpt += 1
+            window_returns = []
 
         if done:
             obs, _ = env.reset()
             episodes += 1
+            window_returns.append(ep_returns)
 
-    pbar.close()
+            ep_returns = 0.0
 
     np.savez(
         out / "snapshots.npz",
@@ -198,7 +204,11 @@ def run_one_seed(
 
 
 def run_experiment(env: gym.Env, config: Config, out: Path = "."):
-    timestamp = datetime.now().strftime("%Y-%m-%d-%I-%M-%S-%p")
+    env_kwargs = config.to_dict()["env_config"]["env_kwargs"]
+    slippery = env_kwargs.get("is_slippery", False) or env_kwargs.get("is_rainy", False)
+    timestamp = datetime.now().strftime(
+        f"%Y-%m-%d-%I-%M-%S-%p-{'slip' if slippery else 'det'}"
+    )
     experiment_dir = out / config.env_config.env_id / timestamp
     experiment_dir.mkdir(parents=True, exist_ok=True)
 
@@ -225,6 +235,8 @@ def run_experiment(env: gym.Env, config: Config, out: Path = "."):
         agent = QTabularLearner(config, rngs[run_idx])
 
         run_one_seed(agent, config, run_dir, env_seed[run_idx])
+
+    return experiment_dir
 
 
 @app.command()
@@ -282,5 +294,3 @@ def main(
 
 if __name__ == "__main__":
     typer.run(main)
-
-# %%
