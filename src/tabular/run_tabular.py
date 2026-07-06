@@ -14,16 +14,21 @@ from src.config import (
     ToyTextEnvConfig,
     ToyTextRunConfig,
 )
-from src.tabular import plots
+from src.tabular import figures, plots
 from src.tabular.eval import evaluate
 from src.tabular.q_learner import run_experiment
 
 ENVS = {
-    # "FrozenLake-v1": {"base_kwargs": {"map_name": "4x4"}, "variant_key": "is_slippery"},
-    # "CliffWalking-v1": {"base_kwargs": {}, "variant_key": "is_slippery"},
+    "FrozenLake-v1": {"base_kwargs": {"map_name": "4x4"}, "variant_key": "is_slippery"},
+    "CliffWalking-v1": {"base_kwargs": {}, "variant_key": "is_slippery"},
     "Taxi-v4": {"base_kwargs": {}, "variant_key": "is_rainy"},
 }
 VARIANTS = {"det": False, "slip": True}
+ENV_STEP_BUDGET = {
+    "FrozenLake-v1": 100_000,
+    "CliffWalking-v1": 100_000,
+    "Taxi-v4": 500_000,
+}
 
 RUNS_ROOT_DIR = Path("runs")
 
@@ -31,7 +36,7 @@ MASTER_SEED = DEFAULT_SEED
 LR = 0.1
 EPSILON = 0.1
 GAMMA = 0.95
-STEP_BUDGET = 100_000
+
 N_RUNS = 10
 CHECKPOINT_POINTS = 100
 CHECKPOINT_TYPE = "log"
@@ -63,7 +68,7 @@ def build_config(env: gym.Env) -> Config:
         run_config=ToyTextRunConfig(
             master_seed=MASTER_SEED,
             lr=LR,
-            step_budget=STEP_BUDGET,
+            step_budget=ENV_STEP_BUDGET[env.spec.id],
             n_runs=N_RUNS,
             checkpoint_points=CHECKPOINT_POINTS,
             checkpoint_type=CHECKPOINT_TYPE,
@@ -72,7 +77,7 @@ def build_config(env: gym.Env) -> Config:
         algo_config=ToyTextAlgoConfig(
             epsilon=EPSILON,
             gamma=GAMMA,
-            decay_steps=STEP_BUDGET // 2,
+            decay_steps=ENV_STEP_BUDGET[env.spec.id] // 2,
         ),
     )
 
@@ -116,6 +121,41 @@ def make_plots(env_id: str, variant_dirs: dict):
     plots.plot_performance_profile(final, out_dir / "performance_profile.png")
 
 
+def make_figures(env_id: str, spec: dict, variant_dirs: dict):
+    """
+    Single best seed figures:
+    visitation heatmaps, learned policy arrows and best agent video playing the game
+    """
+    out_dir = RUNS_ROOT_DIR / env_id / "plots"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # state-action heatmap
+    figures.plot_visitation_sa(
+        variant_dirs, env_id, out_dir / "visitation_heatmap_sa.png"
+    )
+
+    # spacial and policy arrows (overlaid on the rendered map; same for det/slip)
+    if env_id in figures.GRID:
+        figures.plot_visitation_spatial(
+            variant_dirs, env_id, spec["base_kwargs"], out_dir / "visitation_spatial.png"
+        )
+        figures.plot_policy_arrows(
+            variant_dirs, env_id, spec["base_kwargs"], out_dir / "policy_arrows.png"
+        )
+
+    # Champion rollout video
+    vid_dir = RUNS_ROOT_DIR / env_id / "videos"
+    vid_dir.mkdir(parents=True, exist_ok=True)
+    for label, value in VARIANTS.items():
+        env_kwargs = {**spec["base_kwargs"], spec["variant_key"]: value}
+        figures.record_champion(
+            variant_dirs[label],
+            env_id,
+            env_kwargs,
+            vid_dir / f"champion_{label}.mp4",
+        )
+
+
 def main():
     for env_id, spec in ENVS.items():
         print(f"\n=== {env_id} ===")
@@ -127,6 +167,7 @@ def main():
 
         print(f"  plotting -> {RUNS_ROOT_DIR / env_id / 'plots'}")
         make_plots(env_id, variant_dirs)
+        make_figures(env_id, spec, variant_dirs)
         print(f"  {env_id} done")
 
 
