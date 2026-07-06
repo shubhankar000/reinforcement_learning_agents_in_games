@@ -56,7 +56,7 @@ def evaluate(exp_dir: Path, eval_master_seed: int = 67):
     v_random = q_v_star["v_random"]
     all_evals = []
 
-    for dir_ in tqdm(sorted(exp_dir.glob("run_*"))):
+    for dir_ in tqdm(sorted(exp_dir.glob("run_*")), desc="Evaluating 1 seed"):
         snapshots = np.load(dir_ / "snapshots.npz")
 
         qtable_snapshots = snapshots["snapshots"]
