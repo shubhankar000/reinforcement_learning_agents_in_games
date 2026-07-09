@@ -14,14 +14,14 @@ import pandas as pd
 import typer
 from tqdm.auto import trange
 
-from src.config import (
-    DEFAULT_SEED,
-    Config,
+from src.config import DEFAULT_SEED
+from src.rng_factory import SeededRNG
+from src.tabular.config import (
+    TabularConfig,
     ToyTextAlgoConfig,
     ToyTextEnvConfig,
     ToyTextRunConfig,
 )
-from src.rng_factory import SeededRNG
 
 app = typer.Typer()
 
@@ -41,7 +41,7 @@ def epsilon_schedule(
 class QTabularLearner:
     def __init__(
         self,
-        config: Config,
+        config: TabularConfig,
         rng: np.random.Generator,
     ):
         self.config = config
@@ -121,7 +121,7 @@ def create_checkpoint_steps(budget, chkpt_type, n_points, start):
 
 def run_one_seed(
     agent: QTabularLearner,
-    config: Config,
+    config: TabularConfig,
     out: Path,
     env_seed: int,
 ):
@@ -203,13 +203,13 @@ def run_one_seed(
     pd.DataFrame(rows).to_parquet(out / "train_log.parquet")
 
 
-def run_experiment(env: gym.Env, config: Config, out: Path = "."):
+def run_experiment(env: gym.Env, config: TabularConfig, out: Path = "."):
     env_kwargs = config.to_dict()["env_config"]["env_kwargs"]
     slippery = env_kwargs.get("is_slippery", False) or env_kwargs.get("is_rainy", False)
     timestamp = datetime.now().strftime(
         f"%Y-%m-%d-%I-%M-%S-%p-{'slip' if slippery else 'det'}"
     )
-    experiment_dir = out / config.env_config.env_id / timestamp
+    experiment_dir = out / "tabular" / config.env_config.env_id / timestamp
     experiment_dir.mkdir(parents=True, exist_ok=True)
 
     with open(experiment_dir / "meta.json", "w") as f:
@@ -274,7 +274,7 @@ def main(
     env = gym.make(env_id, **env_kwargs)
 
     # initialize the config
-    config = Config(
+    config = TabularConfig(
         run_config=ToyTextRunConfig(
             master_seed=master_seed,
             lr=lr,

@@ -7,14 +7,14 @@ from pathlib import Path
 import gymnasium as gym
 from tqdm.auto import tqdm
 
-from src.config import (
-    DEFAULT_SEED,
-    Config,
+from src.config import DEFAULT_SEED
+from src.tabular import figures, plots
+from src.tabular.config import (
+    TabularConfig,
     ToyTextAlgoConfig,
     ToyTextEnvConfig,
     ToyTextRunConfig,
 )
-from src.tabular import figures, plots
 from src.tabular.eval import evaluate
 from src.tabular.q_learner import run_experiment
 
@@ -63,8 +63,8 @@ TRAIN_CURVES = [
 ]
 
 
-def build_config(env: gym.Env) -> Config:
-    return Config(
+def build_config(env: gym.Env) -> TabularConfig:
+    return TabularConfig(
         run_config=ToyTextRunConfig(
             master_seed=MASTER_SEED,
             lr=LR,
@@ -137,7 +137,10 @@ def make_figures(env_id: str, spec: dict, variant_dirs: dict):
     # spacial and policy arrows (overlaid on the rendered map; same for det/slip)
     if env_id in figures.GRID:
         figures.plot_visitation_spatial(
-            variant_dirs, env_id, spec["base_kwargs"], out_dir / "visitation_spatial.png"
+            variant_dirs,
+            env_id,
+            spec["base_kwargs"],
+            out_dir / "visitation_spatial.png",
         )
         figures.plot_policy_arrows(
             variant_dirs, env_id, spec["base_kwargs"], out_dir / "policy_arrows.png"

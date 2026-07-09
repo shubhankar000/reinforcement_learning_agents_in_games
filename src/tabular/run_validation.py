@@ -11,7 +11,7 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 
-from src.config import ToyTextEnvConfig
+from src.tabular.config import ToyTextEnvConfig
 from src.tabular.validation import value_iteration, policy_evaluation
 
 ENVS = ["FrozenLake-v1", "CliffWalking-v1", "Taxi-v4"]

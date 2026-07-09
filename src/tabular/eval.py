@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
-from src.config import ToyTextEnvConfig
+from src.tabular.config import ToyTextEnvConfig
 from src.rng_factory import SeededRNG
 
 # Eval constant for success criteria and fixed starting pos

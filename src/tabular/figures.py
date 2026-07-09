@@ -160,5 +160,7 @@ def record_champion(
     # write both: mp4 (scrubbable) and gif (frame-exact; VSCode's mp4 preview
     # motion-smooths short clips into fake diagonal motion). Both land in videos/.
     out_path = Path(out_path)
-    imageio.mimsave(out_path.with_suffix(".mp4"), best_frames, fps=fps, macro_block_size=1)
+    imageio.mimsave(
+        out_path.with_suffix(".mp4"), best_frames, fps=fps, macro_block_size=1
+    )
     imageio.mimsave(out_path.with_suffix(".gif"), best_frames, fps=fps)
