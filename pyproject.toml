@@ -41,4 +41,5 @@ dev = [
     "ipython>=9.14.1",
     "ipywidgets>=8.1.8",
     "notebook>=7.5.7",
+    "pygame-ce>=2.5.7",
 ]
