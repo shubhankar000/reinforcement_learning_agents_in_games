@@ -61,6 +61,6 @@ class ToyTextEnvConfig(BaseConfig):
 
 @dataclass
 class TabularConfig(BaseConfig):
-    run_config: ToyTextRunConfig = field(default_factory=ToyTextRunConfig)
-    env_config: ToyTextEnvConfig | None = field(default=None)
-    algo_config: ToyTextAlgoConfig | None = field(default=None)
+    run_config: ToyTextRunConfig = field(default=None)
+    env_config: ToyTextEnvConfig = field(default=None)
+    algo_config: ToyTextAlgoConfig = field(default=None)
