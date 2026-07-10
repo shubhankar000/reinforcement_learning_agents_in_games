@@ -31,6 +31,12 @@ ENV_STEP_BUDGET = {
 }
 
 RUNS_ROOT_DIR = Path("runs")
+ALGO = "tabular"  # keep in sync with run_experiment's runs/<env>/<algo>/<ts> layout
+
+
+def algo_root(env_id: str) -> Path:
+    """runs/<env_id>/tabular — parent of every experiment, plus plots/ and videos/."""
+    return RUNS_ROOT_DIR / env_id / ALGO
 
 MASTER_SEED = DEFAULT_SEED
 LR = 0.1
@@ -97,9 +103,9 @@ def train_and_eval_one(env_id: str, env_kwargs: dict) -> Path:
 
 def make_plots(env_id: str, variant_dirs: dict):
     """
-    Plot every rliable plot for 1 env, into runs/<env_id>/plots/
+    Plot every rliable plot for 1 env, into runs/<env_id>/tabular/plots/
     """
-    out_dir = RUNS_ROOT_DIR / env_id / "plots"
+    out_dir = algo_root(env_id) / "plots"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Plot train
@@ -126,7 +132,7 @@ def make_figures(env_id: str, spec: dict, variant_dirs: dict):
     Single best seed figures:
     visitation heatmaps, learned policy arrows and best agent video playing the game
     """
-    out_dir = RUNS_ROOT_DIR / env_id / "plots"
+    out_dir = algo_root(env_id) / "plots"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # state-action heatmap
@@ -147,7 +153,7 @@ def make_figures(env_id: str, spec: dict, variant_dirs: dict):
         )
 
     # Champion rollout video
-    vid_dir = RUNS_ROOT_DIR / env_id / "videos"
+    vid_dir = algo_root(env_id) / "videos"
     vid_dir.mkdir(parents=True, exist_ok=True)
     for label, value in VARIANTS.items():
         env_kwargs = {**spec["base_kwargs"], spec["variant_key"]: value}
@@ -168,7 +174,7 @@ def main():
             print(f"  [{label}] training {N_RUNS} seeds + eval")
             variant_dirs[label] = train_and_eval_one(env_id, env_kwargs)
 
-        print(f"  plotting -> {RUNS_ROOT_DIR / env_id / 'plots'}")
+        print(f"  plotting -> {algo_root(env_id) / 'plots'}")
         make_plots(env_id, variant_dirs)
         make_figures(env_id, spec, variant_dirs)
         print(f"  {env_id} done")

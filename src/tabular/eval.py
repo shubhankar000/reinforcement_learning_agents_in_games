@@ -32,7 +32,7 @@ def evaluate(exp_dir: Path, eval_master_seed: int = 67):
     per-run eval_log.parquet plus an aggregated all_evals.parquet.
 
     exp_dir: a single leaf experiment dir, e.g.
-        runs/FrozenLake-v1/2026-07-02-05-36-20-PM-det
+        runs/FrozenLake-v1/tabular/2026-07-02-05-36-20-PM-det
     """
     with open(exp_dir / "meta.json") as f:
         meta = json.load(f)
@@ -124,7 +124,7 @@ def evaluate(exp_dir: Path, eval_master_seed: int = 67):
 
 
 if __name__ == "__main__":
-    root = Path("runs/FrozenLake-v1")
+    root = Path("runs/FrozenLake-v1/tabular")
     for exp in sorted(root.iterdir()):
         if exp.is_dir() and (exp / "meta.json").exists():
             evaluate(exp)

@@ -143,7 +143,7 @@ def plot_performance_profile(
 
 
 if __name__ == "__main__":
-    runs_dir = Path("runs/FrozenLake-v1")
+    runs_dir = Path("runs/FrozenLake-v1/tabular")
 
     # Hardcoded for now; the final runner will discover these programmatically.
     # Each variant is its own line — det and slippery have different dynamics,

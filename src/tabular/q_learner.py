@@ -209,7 +209,7 @@ def run_experiment(env: gym.Env, config: TabularConfig, out: Path = "."):
     timestamp = datetime.now().strftime(
         f"%Y-%m-%d-%I-%M-%S-%p-{'slip' if slippery else 'det'}"
     )
-    experiment_dir = out / "tabular" / config.env_config.env_id / timestamp
+    experiment_dir = out / config.env_config.env_id / "tabular" / timestamp
     experiment_dir.mkdir(parents=True, exist_ok=True)
 
     with open(experiment_dir / "meta.json", "w") as f:
