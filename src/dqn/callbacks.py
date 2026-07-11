@@ -21,6 +21,12 @@ class SnapshotCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         self.ep_count += int(np.sum(self.locals["dones"]))
+        obs = np.ravel(self.model._last_obs)
+        acts = np.ravel(self.locals["actions"])
+
+        for o, a in zip(obs, acts):
+            self.visitation[int(o), int(a)] += 1
+
         while (
             self.next_idx < len(self.checkpoints)
         ) and self.num_timesteps >= self.checkpoints[self.next_idx]:
