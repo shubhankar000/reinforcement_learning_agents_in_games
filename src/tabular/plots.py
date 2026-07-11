@@ -142,6 +142,18 @@ def plot_performance_profile(
     plt.close()
 
 
+def plot_probability_of_improvement(pairs: dict, out_path: Path):
+    """
+    Only for dqn
+    """
+    probs, cis = rly.get_interval_estimates(
+        pairs, metrics.probability_of_improvement, reps=2000
+    )
+    plot_utils.plot_probability_of_improvement(probs, cis)
+    plt.savefig(out_path, bbox_inches="tight", dpi=150)
+    plt.close()
+
+
 if __name__ == "__main__":
     runs_dir = Path("runs/FrozenLake-v1/tabular")
 
