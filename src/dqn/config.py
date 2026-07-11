@@ -1,5 +1,6 @@
 from src.config import BaseConfig, DEFAULT_SEED
 from dataclasses import dataclass, field
+import gymnasium as gym
 
 default = lambda x: field(default=x)  # noqa
 
@@ -30,7 +31,24 @@ class DQNAlgoConfig(BaseConfig):
     exploration_fraction: float = default(0.2)
     exploration_final_eps: float = default(0.05)
 
+
+class DQNEnvConfig(BaseConfig):
+    def __init__(self, env: gym.Env):
+        self.action_space = int(env.action_space.n)
+        self.obs_space = int(env.observation_space.n)
+        self.env_id = env.spec.id
+        self.env_kwargs = dict(env.spec.kwargs)
+
+    @classmethod
+    def from_gym_env(cls, env: gym.Env):
+        return cls(env)
+
+    def __repr__(self):
+        return f"{self.action_space=}\n{self.obs_space=}"
+
+
 @dataclass
 class DQNConfig(BaseConfig):
-    run_config = DQNRunConfig
-    algo_config = DQNAlgoConfig
+    run_config: DQNRunConfig = field(default=None)
+    env_config: DQNEnvConfig = field(default=None)
+    algo_config: DQNAlgoConfig = field(default=None)
