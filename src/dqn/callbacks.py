@@ -1,6 +1,5 @@
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
-from src.tabular.q_learner import create_checkpoint_steps
 from src.dqn.qtable import create_qtable
 
 
@@ -9,28 +8,52 @@ class SnapshotCallback(BaseCallback):
     Create snapshots of the agent as a SB3 callback
     """
 
-    def __init__(self, checkpoints, n_states, n_actions):
+    def __init__(self, checkpoints, obs_type, n_states=None, n_actions=None):
         super().__init__()
         self.checkpoints = checkpoints
         self.n_states, self.n_actions = n_states, n_actions
         self.next_idx = 0
         self.snapshots = []
         self.rows = []
-        self.visitation = np.zeros((n_states, n_actions))
+
+        if obs_type == "Discrete":
+            self.visitation = np.zeros((n_states, n_actions))
+        else:
+            self.visitation = None
+            self.obs_buffer = []
+
         self.ep_count = 0
+        self.last_loss = np.nan
+        self.obs_type = obs_type
 
     def _on_step(self) -> bool:
         self.ep_count += int(np.sum(self.locals["dones"]))
-        obs = np.ravel(self.model._last_obs)
-        acts = np.ravel(self.locals["actions"])
 
-        for o, a in zip(obs, acts):
-            self.visitation[int(o), int(a)] += 1
+        # discrete/box path for loss
+        loss = self.logger.name_to_value.get("train/loss", np.nan)
+        if not np.isnan(loss):
+            self.last_loss = loss
+
+        if self.obs_type == "Discrete":
+            obs = np.ravel(self.model._last_obs)
+            acts = np.ravel(self.locals["actions"])
+
+            for o, a in zip(obs, acts):
+                self.visitation[int(o), int(a)] += 1
+        else:  # TODO
+            pass
 
         while (
             self.next_idx < len(self.checkpoints)
         ) and self.num_timesteps >= self.checkpoints[self.next_idx]:
-            self.snapshots.append(create_qtable(self.model, self.n_states))
+            if self.obs_type == "Discrete":
+                self.snapshots.append(create_qtable(self.model, self.n_states))
+
+            else:
+                snap = {
+                    k: v.cpu().clone() for k, v in self.model.q_net.state_dict().items()
+                }
+
             ep_rew = [e["r"] for e in self.model.ep_info_buffer] or [np.nan]
             self.rows.append(
                 {
