@@ -21,6 +21,8 @@ class SnapshotCallback(BaseCallback):
         else:
             self.visitation = None
             self.obs_buffer = []
+            self.obs_stride = 50
+            self.next_obs_at = 0
 
         self.ep_count = 0
         self.last_loss = np.nan
@@ -40,8 +42,10 @@ class SnapshotCallback(BaseCallback):
 
             for o, a in zip(obs, acts):
                 self.visitation[int(o), int(a)] += 1
-        else:  # TODO
-            pass
+        else:
+            if self.num_timesteps >= self.next_obs_at:
+                self.obs_buffer.append(np.asarray(self.model._last_obs).copy())
+                self.next_obs_at = self.num_timesteps + self.obs_stride
 
         while (
             self.next_idx < len(self.checkpoints)
@@ -53,13 +57,14 @@ class SnapshotCallback(BaseCallback):
                 snap = {
                     k: v.cpu().clone() for k, v in self.model.q_net.state_dict().items()
                 }
+                self.snapshots.append(snap)
 
             ep_rew = [e["r"] for e in self.model.ep_info_buffer] or [np.nan]
             self.rows.append(
                 {
                     "env_steps": self.checkpoints[self.next_idx],
                     "episode": self.ep_count,
-                    "mean_td_error": np.nan,
+                    "mean_td_error": float(self.last_loss),
                     "epsilon": self.model.exploration_rate,
                     "train_return_mean": float(np.mean(ep_rew)),
                 }
