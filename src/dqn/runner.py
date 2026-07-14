@@ -38,18 +38,42 @@ def run_one_seed(cfg: DQNConfig, seed: int, out: Path):
 
     algo = algo_cfg.to_dict()
     policy = algo.pop("policy")
-    model = DQN(policy, venv, seed=int(seed), device=run_cfg.device, verbose=0, **algo)
+    net_arch = algo.pop("net_arch")
+    model = DQN(
+        policy,
+        venv,
+        seed=int(seed),
+        device=run_cfg.device,
+        verbose=0,
+        policy_kwargs={"net_arch": net_arch},
+        **algo,
+    )
 
-    cb = SnapshotCallback(checkpoints, n_states, n_actions)
+    cb = SnapshotCallback(checkpoints, cfg.env_config.obs_type, n_states, n_actions)
     model.learn(total_timesteps=run_cfg.step_budget, callback=cb, progress_bar=False)
 
-    np.savez(
-        out / "snapshots.npz",
-        snapshots=np.array(cb.snapshots),
-        steps=np.array(checkpoints),
-        visitation=cb.visitation,
-    )
     pd.DataFrame(cb.rows).to_parquet(out / "train_log.parquet")
+
+    if cfg.env_config.obs_type == "Discrete":
+        np.savez(
+            out / "snapshots.npz",
+            snapshots=np.array(cb.snapshots),
+            steps=np.array(checkpoints),
+            visitation=cb.visitation,
+        )
+    else:
+        torch.save(
+            {
+                "snapshots": cb.snapshots,
+                "steps": np.asarray(checkpoints),
+                "net_arch": model.policy.net_arch,
+                "obs_dim": cfg.env_config.obs_space,
+                "n_actions": cfg.env_config.action_space,
+            },
+            out / "snapshots.pt",
+        )
+        if cb.obs_buffer:
+            np.save(out / "obs_coverage.npy", np.concatenate(cb.obs_buffer))
 
 
 def run_experiment(cfg: DQNConfig, out=Path("./runs")):
