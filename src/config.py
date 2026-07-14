@@ -2,10 +2,9 @@
 Generic config class to be used by all learner classes.
 """
 
-from dataclasses import dataclass, field
-import gymnasium as gym
 import json
 
+import numpy as np
 
 DEFAULT_SEED = 67
 
@@ -27,6 +26,8 @@ class BaseConfig:
             return value.to_dict()
         if isinstance(value, (list, tuple)):
             return [BaseConfig._encode(v) for v in value]
+        if isinstance(value, np.ndarray):
+            return value.tolist()
         if isinstance(value, dict):
             return {k: BaseConfig._encode(v) for k, v in value.items()}
         return value  # int / float / str / bool / None
