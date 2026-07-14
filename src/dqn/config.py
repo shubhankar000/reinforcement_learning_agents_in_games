@@ -30,6 +30,7 @@ class DQNAlgoConfig(BaseConfig):
     target_update_interval: int = default(500)
     exploration_fraction: float = default(0.2)
     exploration_final_eps: float = default(0.05)
+    net_arch: list = field(default_factory=lambda: [64, 64])
 
 
 class DQNEnvConfig(BaseConfig):
@@ -38,8 +39,8 @@ class DQNEnvConfig(BaseConfig):
 
         if isinstance(env.observation_space, gym.spaces.Box):
             self.obs_space = env.observation_space.shape
-            self.obs_space_low = env.observation_space.low
-            self.obs_space_high = env.observation_space.high
+            self.obs_space_low = env.observation_space.low.tolist()
+            self.obs_space_high = env.observation_space.high.tolist()
             self.obs_type = "Box"
         else:
             self.obs_space = int(env.observation_space.n)
