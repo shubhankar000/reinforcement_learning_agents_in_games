@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 import gymnasium as gym
-import imageio.v2 as imageio
+import imageio.v3 as imageio
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -160,7 +160,13 @@ def record_champion(
     # write both: mp4 (scrubbable) and gif (frame-exact; VSCode's mp4 preview
     # motion-smooths short clips into fake diagonal motion). Both land in videos/.
     out_path = Path(out_path)
-    imageio.mimsave(
-        out_path.with_suffix(".mp4"), best_frames, fps=fps, macro_block_size=1
+    imageio.imwrite(
+        out_path.with_suffix(".mp4"),
+        best_frames,
+        fps=fps,
+        macro_block_size=1,
+        plugin="FFMPEG",
     )
-    imageio.mimsave(out_path.with_suffix(".gif"), best_frames, fps=fps)
+    imageio.imwrite(
+        out_path.with_suffix(".gif"), best_frames, duration=1000 / fps, loop=0
+    )
