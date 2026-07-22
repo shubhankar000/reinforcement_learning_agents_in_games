@@ -38,6 +38,7 @@ def algo_root(env_id: str) -> Path:
     """runs/<env_id>/tabular — parent of every experiment, plus plots/ and videos/."""
     return RUNS_ROOT_DIR / env_id / ALGO
 
+
 MASTER_SEED = DEFAULT_SEED
 LR = 0.1
 EPSILON = 0.1
