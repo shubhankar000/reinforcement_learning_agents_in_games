@@ -4,10 +4,6 @@ Heatmap figures file, helper functions to generate heatmaps
 
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-
 import gymnasium as gym
 import imageio.v3 as imageio
 import matplotlib.colors as mcolors

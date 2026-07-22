@@ -76,13 +76,10 @@ def run_one_seed(cfg: DQNConfig, seed: int, out: Path):
             np.save(out / "obs_coverage.npy", np.concatenate(cb.obs_buffer))
 
 
-def run_experiment(cfg: DQNConfig, out=Path("./runs")):
+def run_experiment(cfg: DQNConfig, label: str, out=Path("./runs")):
     env_config = cfg.env_config
-    env_id, env_kwargs = env_config.env_id, env_config.env_kwargs
-    slippery = env_kwargs.get("is_slippery", False) or env_kwargs.get("is_rainy", False)
-    ts = datetime.now().strftime(
-        f"%Y-%m-%d-%I-%M-%S-%p-{'slip' if slippery else 'det'}"
-    )
+    env_id = env_config.env_id
+    ts = datetime.now().strftime(f"%Y-%m-%d-%I-%M-%S-%p-{label}")
     exp_dir = out / env_id / "dqn" / ts
     exp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -121,7 +118,7 @@ def run_experiment(cfg: DQNConfig, out=Path("./runs")):
         total=total_steps,
         unit="step",
         unit_scale=True,
-        desc=f"{env_id} {'slip' if slippery else 'det'}",
+        desc=f"{env_id} {label}",
     ) as pbar:
         for _ in jobs:
             pbar.update(

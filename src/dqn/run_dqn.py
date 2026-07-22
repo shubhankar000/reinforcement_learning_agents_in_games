@@ -82,9 +82,6 @@ ENVS = {
             exploration_final_eps=0.1,
         ),
     },
-    #     "CarRacing-v3": {
-    #         "base_kwargs":
-    #     }
 }
 
 RUNS_ROOT_DIR = Path("runs")
@@ -161,9 +158,9 @@ def eval_dqn(exp_dir: Path, obs_type: str):
         evaluate_tabular(exp_dir)
 
 
-def train_one(env_id: str, env_kwargs: dict, spec: dict, obs_type: str) -> Path:
+def train_one(env_id: str, env_kwargs: dict, spec: dict, obs_type: str, label) -> Path:
     cfg = build_config(env_id, env_kwargs, spec)
-    exp_dir = run_experiment(cfg, out=RUNS_ROOT_DIR)
+    exp_dir = run_experiment(cfg, label, out=RUNS_ROOT_DIR)
     eval_dqn(exp_dir, obs_type)
     return exp_dir
 
@@ -227,9 +224,18 @@ def make_figures(env_id: str, spec: dict, variant_dirs: dict, obs_type: str):
     Single best seed figures:
     visitation heatmaps, learned policy arrows and best agent video playing the game.
     All of these consume snapshots.npz (Q-table + discrete visitation), so they are
-    Discrete-only. Box equivalents are TODO.
+    Discrete-only.
     """
     if obs_type == "Box":
+        out_dir = algo_root(env_id) / "plots"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        dqn_figures.plot_obs_coverage(
+            variant_dirs,
+            env_id,
+            spec["base_kwargs"],
+            out_dir / "obs_coverage.png",
+        )
+
         var_dir = algo_root(env_id) / "videos"
         var_dir.mkdir(parents=True, exist_ok=True)
         for label, extra_kwargs in spec["variants"].items():
@@ -241,7 +247,6 @@ def make_figures(env_id: str, spec: dict, variant_dirs: dict, obs_type: str):
                 var_dir / f"champion_{label}.mp4",
             )
             dqn_figures.save_champion_box(variant_dirs[label], env_id, env_kwargs)
-            # TODO state-coverage scatter
 
         return
 
@@ -286,7 +291,7 @@ def main():
         for label, extra_kwargs in spec["variants"].items():
             env_kwargs = {**spec["base_kwargs"], **extra_kwargs}
             print(f"  [{label}] training {N_RUNS} seeds ({N_JOBS} parallel)")
-            variant_dirs[label] = train_one(env_id, env_kwargs, spec, obs_type)
+            variant_dirs[label] = train_one(env_id, env_kwargs, spec, obs_type, label)
 
         make_plots(env_id, variant_dirs, obs_type)
         make_figures(env_id, spec, variant_dirs, obs_type)

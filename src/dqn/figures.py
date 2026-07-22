@@ -3,6 +3,7 @@ from pathlib import Path
 
 import gymnasium as gym
 import imageio.v3 as imageio
+import matplotlib
 import numpy as np
 import pandas as pd
 import torch
@@ -11,11 +12,71 @@ from stable_baselines3 import DQN
 from src.dqn.eval import ENVS
 from src.rng_factory import SeededRNG
 
+matplotlib.use("Agg")
+
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+
 VAL_SEED = 67
 TEST_SEED = 420
 
+OBS_DIMS = {
+    "LunarLander-v3": {
+        "names": ["x", "y", "vx", "vy", "angle", "ang_vel", "leg1", "leg2"],
+        "pairs": [(0, 1), (2, 3)],
+    },
+    "CartPole-v1": {
+        "names": ["x", "x_dot", "theta", "theta_dot"],
+        "pairs": [(0, 2), (1, 3)],
+    },
+}
 
-def find_champion(exp_dir, metric="eval_return_mean", smooth=3):
+
+def load_coverage(exp_dir: Path) -> np.ndarray:
+    files = sorted(exp_dir.glob("run_*/obs_coverage.npy"))
+    return np.concatenate([np.load(f) for f in files])
+
+
+def plot_obs_coverage(
+    variant_dirs: dict, env_id: str, env_kwargs: dict, out_path: Path, gridsize=60
+):
+    spec = OBS_DIMS[env_id]
+    nrows, ncols = len(variant_dirs), len(spec["pairs"])
+    fig, axes = plt.subplots(
+        nrows, ncols, figsize=(5 * ncols, 4 * nrows), squeeze=False
+    )
+
+    for i, (label, d) in enumerate(variant_dirs.items()):
+        obs = load_coverage(d)
+        tr = champion_trace(d, env_id, env_kwargs)  # <-- once per variant
+
+        for j, (a, b) in enumerate(spec["pairs"]):
+            ax = axes[i][j]
+            hb = ax.hexbin(
+                obs[:, a],
+                obs[:, b],
+                gridsize=gridsize,
+                norm=mcolors.LogNorm(),
+                mincnt=1,
+                cmap="viridis",
+            )
+            ax.plot(
+                tr[:, a], tr[:, b], color="red", lw=1.5, alpha=0.9, label="champion"
+            )  # exploited path
+            ax.scatter(
+                tr[0, a], tr[0, b], c="white", s=40, ec="k", zorder=5
+            )  # start marker
+            ax.set_xlabel(spec["names"][a])
+            ax.set_ylabel(spec["names"][b])
+            ax.set_title(f"{label}: {spec['names'][a]} x {spec['names'][b]}")
+            fig.colorbar(hb, ax=ax, label="samples (log)")
+
+    axes[0][0].legend(loc="upper right")
+    fig.savefig(out_path, bbox_inches="tight", dpi=150)
+    plt.close(fig)
+
+
+def find_champion(exp_dir, metric="eval_return_mean", smooth=1):
     df = pd.read_parquet(exp_dir / "all_evals.parquet").sort_values(
         ["run_no.", "env_steps"]
     )
@@ -42,23 +103,43 @@ def load_champion_box(exp_dir, env):
     return model, run_no, champ_step, sel_value
 
 
-def rollout(model: DQN, env: gym.Env, seed, cap, render=False):
+def rollout(model: DQN, env: gym.Env, seed, cap, render=False, trace=False):
     obs, _ = env.reset(seed=seed)
     frames = [env.render()] if render else None
+    path = [obs] if trace else None
     done, L, r, term, trunc, G = False, 0, 0.0, False, False, 0.0
-
     while not done and L < cap:
         act, _ = model.predict(obs, deterministic=True)
         obs, r, term, trunc, _ = env.step(int(act))
-
         if render:
             frames.append(env.render())
-
+        if trace:
+            path.append(obs)
         G += r
         done = term or trunc
         L += 1
+    return G, L, r, term, trunc, frames, path
 
-    return G, L, r, term, trunc, frames
+
+def champion_trace(exp_dir: Path, env_id: str, env_kwargs: dict, tries=20):
+    env = gym.make(env_id, **env_kwargs)
+    model, _, _, _ = load_champion_box(exp_dir, env)
+    is_success = ENVS[env_id]["is_success"]
+    cap = env.spec.max_episode_steps or 1000
+    best = None
+
+    for t in range(tries):
+        G, L, r, term, trunc, _, path = rollout(model, env, t, cap, trace=True)
+
+        if best is None:
+            best = path
+
+        if is_success(term, trunc, r, G, L):
+            best = path
+            break
+
+    env.close()
+    return np.asarray(best)
 
 
 def record_champion_box(
@@ -73,7 +154,7 @@ def record_champion_box(
     # Arbitrary seeds not derived from SeedSequence.
     # This is for the video only, not for measurement.
     for t in range(tries):
-        G, L, r, term, trunc, frames = rollout(model, env, t, cap, render=True)
+        G, L, r, term, trunc, frames, _ = rollout(model, env, t, cap, render=True)
         if best is None:
             best = frames
 
@@ -115,7 +196,7 @@ def verify_champion(model: DQN, env: gym.Env, M=200):
     rng = SeededRNG(TEST_SEED)
     Gs, succ = [], []
     for _ in range(M):
-        G, L, r, term, trunc, _ = rollout(model, env, rng.next_seed(), cap)
+        G, L, r, term, trunc, _, _ = rollout(model, env, rng.next_seed(), cap)
         Gs.append(G)
         succ.append(is_success(term, trunc, r, G, L))
 
