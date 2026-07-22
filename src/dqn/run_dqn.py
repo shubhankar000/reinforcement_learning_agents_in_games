@@ -16,6 +16,7 @@ from tqdm.auto import tqdm
 
 from src.config import DEFAULT_SEED
 from src.dqn import figures as dqn_figures
+from src.dqn.cleanup import cleanup_experiment
 from src.dqn.config import DQNAlgoConfig, DQNConfig, DQNEnvConfig, DQNRunConfig
 from src.dqn.eval import evaluate as evaluate_box
 from src.dqn.runner import run_experiment
@@ -23,47 +24,62 @@ from src.tabular import figures, plots
 from src.tabular.eval import evaluate as evaluate_tabular
 
 ENVS = {
-    # # === ToyText (Discrete obs). ===
-    # "FrozenLake-v1": {
-    #     "base_kwargs": {"map_name": "4x4"},
-    #     "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
-    #     "budget": 100_000,
-    #     "algo": dict(gamma=0.95, net_arch=[64, 64], learning_rate=1e-3,
-    #                  buffer_size=50_000, learning_starts=1_000),
-    # },
-    # "CliffWalking-v1": {
-    #     "base_kwargs": {},
-    #     "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
-    #     "budget": 100_000,
-    #     "algo": dict(gamma=0.95, net_arch=[64, 64], learning_rate=1e-3,
-    #                  buffer_size=50_000, learning_starts=1_000),
-    # },
-    # "Taxi-v4": {
-    #     "base_kwargs": {},
-    #     "variants": {"det": {"is_rainy": False}, "slip": {"is_rainy": True}},
-    #     "budget": 500_000,
-    #     "algo": dict(gamma=0.95, net_arch=[64, 64], learning_rate=1e-3,
-    #                  buffer_size=50_000, learning_starts=1_000),
-    # },
-    # #  === Box obs space envs ===
-    # "CartPole-v1": {
-    #     "base_kwargs": {},
-    #     "variants": {"main": {}},
-    #     "budget": 100_000,
-    #     "algo": dict(
-    #         gamma=0.99,
-    #         net_arch=[64, 64],
-    #         learning_rate=1e-3,
-    #         batch_size=128,
-    #         buffer_size=100_000,
-    #         learning_starts=1_000,
-    #         train_freq=256,
-    #         gradient_steps=128,
-    #         target_update_interval=10,
-    #         exploration_fraction=0.16,
-    #         exploration_final_eps=0.04,
-    #     ),
-    # },
+    # === ToyText (Discrete obs). ===
+    "FrozenLake-v1": {
+        "base_kwargs": {"map_name": "4x4"},
+        "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
+        "budget": 100_000,
+        "algo": dict(
+            gamma=0.95,
+            net_arch=[64, 64],
+            learning_rate=1e-3,
+            buffer_size=50_000,
+            learning_starts=1_000,
+        ),
+    },
+    "CliffWalking-v1": {
+        "base_kwargs": {},
+        "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
+        "budget": 100_000,
+        "algo": dict(
+            gamma=0.95,
+            net_arch=[64, 64],
+            learning_rate=1e-3,
+            buffer_size=50_000,
+            learning_starts=1_000,
+        ),
+    },
+    "Taxi-v4": {
+        "base_kwargs": {},
+        "variants": {"det": {"is_rainy": False}, "slip": {"is_rainy": True}},
+        "budget": 500_000,
+        "algo": dict(
+            gamma=0.95,
+            net_arch=[64, 64],
+            learning_rate=1e-3,
+            buffer_size=50_000,
+            learning_starts=1_000,
+        ),
+    },
+    #  === Box obs space envs ===
+    "CartPole-v1": {
+        "base_kwargs": {},
+        "variants": {"main": {}},
+        "budget": 100_000,
+        "algo": dict(
+            gamma=0.99,
+            net_arch=[64, 64],
+            learning_rate=1e-3,
+            batch_size=128,
+            buffer_size=100_000,
+            learning_starts=1_000,
+            train_freq=256,
+            gradient_steps=128,
+            target_update_interval=10,
+            exploration_fraction=0.16,
+            exploration_final_eps=0.04,
+        ),
+    },
     "LunarLander-v3": {
         "base_kwargs": {},
         "variants": {"main": {}},
@@ -81,6 +97,29 @@ ENVS = {
             exploration_fraction=0.12,
             exploration_final_eps=0.1,
         ),
+    },
+    "CarRacing-v3": {
+        "base_kwargs": {
+            "continuous": False
+        },  # DQN needs Discrete(5), not the Box default
+        "variants": {"main": {}},
+        "budget": 500_000,
+        "n_runs": 5,  # fewer seeds — image replay buffer is ~3000x LunarLander's
+        "n_jobs": 2,
+        "algo": dict(
+            gamma=0.99,
+            learning_rate=1e-4,
+            batch_size=32,
+            buffer_size=50_000,  # ~2.8 GB RAM/seed at (4,84,84) uint8
+            learning_starts=10_000,
+            train_freq=4,
+            gradient_steps=1,
+            target_update_interval=1_000,
+            exploration_fraction=0.2,
+            exploration_final_eps=0.05,
+            net_arch=[512],  # FC head after NatureCNN
+        ),
+        "checkpoint_points": 50,
     },
 }
 
@@ -127,21 +166,26 @@ TRAIN_CURVES = [
 
 def obs_type_of(env_id: str, base_kwargs: dict) -> str:
     env = gym.make(env_id, **base_kwargs)
-    t = "Box" if isinstance(env.observation_space, gym.spaces.Box) else "Discrete"
+    space = env.observation_space
     env.close()
-    return t
+    if isinstance(space, gym.spaces.Box):
+        return "Image" if len(space.shape) == 3 else "Box"
+    return "Discrete"
 
 
-def build_config(env_id: str, env_kwargs: dict, spec: dict):
+def build_config(env_id: str, env_kwargs: dict, spec: dict, obs_type: str):
+    policy = "CnnPolicy" if obs_type == "Image" else "MlpPolicy"
+    device = "cuda" if obs_type == "Image" else "cpu"
     env = gym.make(env_id, **env_kwargs)
     cfg = DQNConfig(
-        algo_config=DQNAlgoConfig(policy=POLICY, **spec["algo"]),
+        algo_config=DQNAlgoConfig(policy=policy, **spec["algo"]),
         run_config=DQNRunConfig(
             master_seed=MASTER_SEED,
             step_budget=spec["budget"],
-            n_runs=N_RUNS,
-            n_jobs=N_JOBS,
-            checkpoint_points=CHECKPOINT_POINTS,
+            n_runs=spec.get("n_runs", N_RUNS),
+            n_jobs=spec.get("n_jobs", N_JOBS),
+            device=device,
+            checkpoint_points=spec.get("checkpoint_points", CHECKPOINT_POINTS),
             checkpoint_type=CHECKPOINT_TYPE,
         ),
         env_config=DQNEnvConfig.from_gym_env(env),
@@ -159,7 +203,7 @@ def eval_dqn(exp_dir: Path, obs_type: str):
 
 
 def train_one(env_id: str, env_kwargs: dict, spec: dict, obs_type: str, label) -> Path:
-    cfg = build_config(env_id, env_kwargs, spec)
+    cfg = build_config(env_id, env_kwargs, spec, obs_type)
     exp_dir = run_experiment(cfg, label, out=RUNS_ROOT_DIR)
     eval_dqn(exp_dir, obs_type)
     return exp_dir
@@ -202,7 +246,7 @@ def make_plots(env_id: str, variant_dirs: dict, obs_type: str):
         plots.plot_sample_efficiency(scores, frames, out_dir / fname, ylabel=ylabel)
 
     # Plot eval
-    eval_curves = BOX_EVAL_CURVES if obs_type == "Box" else DISCRETE_EVAL_CURVES
+    eval_curves = DISCRETE_EVAL_CURVES if obs_type == "Discrete" else BOX_EVAL_CURVES
     for metric, normalize, ylabel, fname in tqdm(
         eval_curves, desc="curves", leave=False
     ):
@@ -211,7 +255,7 @@ def make_plots(env_id: str, variant_dirs: dict, obs_type: str):
         )
         plots.plot_sample_efficiency(scores, frames, out_dir / fname, ylabel=ylabel)
 
-    if obs_type == "Box":
+    if obs_type != "Discrete":
         plot_predicted_vs_realized(variant_dirs, out_dir / "predicted_vs_realized.png")
 
     final = plots.final_scores_normalized(variant_dirs)
@@ -226,28 +270,24 @@ def make_figures(env_id: str, spec: dict, variant_dirs: dict, obs_type: str):
     All of these consume snapshots.npz (Q-table + discrete visitation), so they are
     Discrete-only.
     """
-    if obs_type == "Box":
+    if obs_type in ("Box", "Image"):
         out_dir = algo_root(env_id) / "plots"
         out_dir.mkdir(parents=True, exist_ok=True)
-        dqn_figures.plot_obs_coverage(
-            variant_dirs,
-            env_id,
-            spec["base_kwargs"],
-            out_dir / "obs_coverage.png",
-        )
-
-        var_dir = algo_root(env_id) / "videos"
-        var_dir.mkdir(parents=True, exist_ok=True)
+        if obs_type == "Box":
+            dqn_figures.plot_obs_coverage(
+                variant_dirs, env_id, spec["base_kwargs"], out_dir / "obs_coverage.png"
+            )
+        vid_dir = algo_root(env_id) / "videos"
+        vid_dir.mkdir(parents=True, exist_ok=True)
         for label, extra_kwargs in spec["variants"].items():
             env_kwargs = {**spec["base_kwargs"], **extra_kwargs}
             dqn_figures.record_champion_box(
                 variant_dirs[label],
                 env_id,
                 env_kwargs,
-                var_dir / f"champion_{label}.mp4",
+                vid_dir / f"champion_{label}.mp4",
             )
             dqn_figures.save_champion_box(variant_dirs[label], env_id, env_kwargs)
-
         return
 
     out_dir = algo_root(env_id) / "plots"
@@ -295,6 +335,10 @@ def main():
 
         make_plots(env_id, variant_dirs, obs_type)
         make_figures(env_id, spec, variant_dirs, obs_type)
+
+        for exp_dir in variant_dirs.values():
+            cleanup_experiment(exp_dir, dry_run=False)
+
         print(f"  {env_id} done")
 
 

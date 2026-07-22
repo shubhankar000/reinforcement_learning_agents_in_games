@@ -42,7 +42,7 @@ class SnapshotCallback(BaseCallback):
 
             for o, a in zip(obs, acts):
                 self.visitation[int(o), int(a)] += 1
-        else:
+        elif self.obs_type == "Box":
             if self.num_timesteps >= self.next_obs_at:
                 self.obs_buffer.append(np.asarray(self.model._last_obs).copy())
                 self.next_obs_at = self.num_timesteps + self.obs_stride

@@ -9,6 +9,7 @@ import pandas as pd
 import torch
 from stable_baselines3 import DQN
 
+from src.dqn.envs import make_env
 from src.dqn.eval import ENVS
 from src.rng_factory import SeededRNG
 
@@ -87,12 +88,13 @@ def find_champion(exp_dir, metric="eval_return_mean", smooth=1):
     return best["run_no."], int(best["env_steps"]), float(best[metric])
 
 
-def load_champion_box(exp_dir, env):
+def load_champion_box(exp_dir: Path, env: gym.Env):
     run_no, champ_step, sel_value = find_champion(exp_dir)
     snaps = torch.load(exp_dir / run_no / "snapshots.pt", weights_only=False)
     idx = list(snaps["steps"]).index(champ_step)
+    policy = json.loads((exp_dir / "meta.json").read_text())["algo_config"]["policy"]
     model = DQN(
-        "MlpPolicy",
+        policy,
         env,
         policy_kwargs={"net_arch": snaps["net_arch"]},
         buffer_size=1,
@@ -122,7 +124,7 @@ def rollout(model: DQN, env: gym.Env, seed, cap, render=False, trace=False):
 
 
 def champion_trace(exp_dir: Path, env_id: str, env_kwargs: dict, tries=20):
-    env = gym.make(env_id, **env_kwargs)
+    env = make_env(env_id, env_kwargs)
     model, _, _, _ = load_champion_box(exp_dir, env)
     is_success = ENVS[env_id]["is_success"]
     cap = env.spec.max_episode_steps or 1000
@@ -145,7 +147,7 @@ def champion_trace(exp_dir: Path, env_id: str, env_kwargs: dict, tries=20):
 def record_champion_box(
     exp_dir: Path, env_id: str, env_kwargs: dict, out_path: Path, fps=30, tries=20
 ):
-    env = gym.make(env_id, render_mode="rgb_array", **env_kwargs)
+    env = make_env(env_id, env_kwargs, render_mode="rgb_array")
     model, _, _, _ = load_champion_box(exp_dir, env)
     is_success = ENVS[env_id]["is_success"]
     cap = env.spec.max_episode_steps or 1000
@@ -170,7 +172,7 @@ def record_champion_box(
 
 
 def save_champion_box(exp_dir: Path, env_id, env_kwargs):
-    env = gym.make(env_id, **env_kwargs)
+    env = make_env(env_id, env_kwargs)
     model, run_no, champ_step, sel_value = load_champion_box(exp_dir, env)
 
     model.save(exp_dir / "champion_model.zip")  # inference only

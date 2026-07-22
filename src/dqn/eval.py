@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 import gymnasium as gym
 import numpy as np
 import pandas as pd
@@ -7,17 +8,20 @@ import torch
 from stable_baselines3 import DQN
 from tqdm.auto import tqdm
 
+from src.dqn.envs import make_env
 from src.rng_factory import SeededRNG
 
 # Reference V values from literature
 REFERENCE = {
     "CartPole-v1": {"v_random": 22.0, "v_star": 500.0},
     "LunarLander-v3": {"v_random": -180.0, "v_star": 200.0},
+    "CarRacing-v3": {"v_random": -50.0, "v_star": 900.0},
 }
 
 ENVS = {
     "CartPole-v1": {"is_success": lambda term, trunc, r, G, L: L >= 500},
     "LunarLander-v3": {"is_success": lambda term, trunc, r, G, L: G > 200},
+    "CarRacing-v3": {"is_success": lambda term, trunc, r, G, L: G > 900},
 }
 M = 20
 
@@ -29,17 +33,19 @@ def evaluate(exp_dir: Path, eval_master_seed: int = 67):
     gamma = meta["algo_config"]["gamma"]
     ref, cfg = REFERENCE[env_id], ENVS[env_id]
 
+    policy = meta["algo_config"]["policy"]
+    device = meta["run_config"]["device"]
     all_evals = []
     for dir_ in tqdm(sorted(exp_dir.glob("run_*")), desc="Evaluating 1 seed"):
         blob = torch.load(dir_ / "snapshots.pt", weights_only=False)
-        env = gym.make(env_id, **env_kwargs)
+        env = make_env(env_id, env_kwargs)
         cap = env.spec.max_episode_steps or 1000
 
         shell = DQN(
-            "MlpPolicy",
+            policy,
             env,
             policy_kwargs={"net_arch": blob["net_arch"]},
-            device="cpu",
+            device=device,
             buffer_size=1,
         )
 
