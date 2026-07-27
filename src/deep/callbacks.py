@@ -1,6 +1,6 @@
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
-from src.dqn.qtable import create_qtable
+from src.deep.qtable import create_qtable
 
 
 class SnapshotCallback(BaseCallback):

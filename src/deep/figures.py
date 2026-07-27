@@ -9,8 +9,8 @@ import pandas as pd
 import torch
 from stable_baselines3 import DQN
 
-from src.dqn.envs import make_env
-from src.dqn.eval import ENVS
+from src.deep.envs import make_env
+from src.deep.eval import ENVS
 from src.rng_factory import SeededRNG
 
 matplotlib.use("Agg")

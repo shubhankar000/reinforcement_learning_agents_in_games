@@ -10,9 +10,9 @@ from joblib import Parallel, delayed
 from stable_baselines3 import DQN
 from tqdm.auto import tqdm
 
-from src.dqn.callbacks import SnapshotCallback
-from src.dqn.config import DQNConfig
-from src.dqn.envs import make_vecenv
+from src.deep.callbacks import SnapshotCallback
+from src.deep.config import DQNConfig
+from src.deep.envs import make_vecenv
 from src.rng_factory import SeededRNG
 from src.tabular.q_learner import create_checkpoint_steps
 

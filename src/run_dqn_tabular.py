@@ -3,7 +3,7 @@ Call the main runners of both tabular and dqn in sequence
 """
 
 from src.tabular.run_tabular import main as tabular_main
-from src.dqn.run_dqn import main as dqn_main
+from src.deep.run_dqn import main as dqn_main
 
 
 def main():

@@ -15,89 +15,89 @@ import gymnasium as gym
 from tqdm.auto import tqdm
 
 from src.config import DEFAULT_SEED
-from src.dqn import figures as dqn_figures
-from src.dqn.cleanup import cleanup_experiment
-from src.dqn.config import DQNAlgoConfig, DQNConfig, DQNEnvConfig, DQNRunConfig
-from src.dqn.eval import evaluate as evaluate_box
-from src.dqn.runner import run_experiment
+from src.deep import figures as dqn_figures
+from src.deep.cleanup import cleanup_experiment
+from src.deep.config import DQNAlgoConfig, DQNConfig, DQNEnvConfig, DQNRunConfig
+from src.deep.eval import evaluate as evaluate_box
+from src.deep.runner import run_experiment
 from src.tabular import figures, plots
 from src.tabular.eval import evaluate as evaluate_tabular
 
 ENVS = {
-    # === ToyText (Discrete obs). ===
-    "FrozenLake-v1": {
-        "base_kwargs": {"map_name": "4x4"},
-        "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
-        "budget": 100_000,
-        "algo": dict(
-            gamma=0.95,
-            net_arch=[64, 64],
-            learning_rate=1e-3,
-            buffer_size=50_000,
-            learning_starts=1_000,
-        ),
-    },
-    "CliffWalking-v1": {
-        "base_kwargs": {},
-        "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
-        "budget": 100_000,
-        "algo": dict(
-            gamma=0.95,
-            net_arch=[64, 64],
-            learning_rate=1e-3,
-            buffer_size=50_000,
-            learning_starts=1_000,
-        ),
-    },
-    "Taxi-v4": {
-        "base_kwargs": {},
-        "variants": {"det": {"is_rainy": False}, "slip": {"is_rainy": True}},
-        "budget": 500_000,
-        "algo": dict(
-            gamma=0.95,
-            net_arch=[64, 64],
-            learning_rate=1e-3,
-            buffer_size=50_000,
-            learning_starts=1_000,
-        ),
-    },
-    #  === Box obs space envs ===
-    "CartPole-v1": {
-        "base_kwargs": {},
-        "variants": {"main": {}},
-        "budget": 100_000,
-        "algo": dict(
-            gamma=0.99,
-            net_arch=[64, 64],
-            learning_rate=1e-3,
-            batch_size=128,
-            buffer_size=100_000,
-            learning_starts=1_000,
-            train_freq=256,
-            gradient_steps=128,
-            target_update_interval=10,
-            exploration_fraction=0.16,
-            exploration_final_eps=0.04,
-        ),
-    },
-    "LunarLander-v3": {
-        "base_kwargs": {},
-        "variants": {"main": {}},
-        "budget": 500_000,
-        "algo": dict(
-            gamma=0.99,
-            net_arch=[256, 256],
-            learning_rate=5e-4,
-            batch_size=128,
-            buffer_size=50_000,
-            learning_starts=1_000,
-            train_freq=4,
-            gradient_steps=-1,
-            target_update_interval=250,
-            exploration_fraction=0.12,
-            exploration_final_eps=0.1,
-        ),
-    },
+    # # === ToyText (Discrete obs). ===
+    # "FrozenLake-v1": {
+    #     "base_kwargs": {"map_name": "4x4"},
+    #     "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
+    #     "budget": 100_000,
+    #     "algo": dict(
+    #         gamma=0.95,
+    #         net_arch=[64, 64],
+    #         learning_rate=1e-3,
+    #         buffer_size=50_000,
+    #         learning_starts=1_000,
+    #     ),
+    # },
+    # "CliffWalking-v1": {
+    #     "base_kwargs": {},
+    #     "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
+    #     "budget": 100_000,
+    #     "algo": dict(
+    #         gamma=0.95,
+    #         net_arch=[64, 64],
+    #         learning_rate=1e-3,
+    #         buffer_size=50_000,
+    #         learning_starts=1_000,
+    #     ),
+    # },
+    # "Taxi-v4": {
+    #     "base_kwargs": {},
+    #     "variants": {"det": {"is_rainy": False}, "slip": {"is_rainy": True}},
+    #     "budget": 500_000,
+    #     "algo": dict(
+    #         gamma=0.95,
+    #         net_arch=[64, 64],
+    #         learning_rate=1e-3,
+    #         buffer_size=50_000,
+    #         learning_starts=1_000,
+    #     ),
+    # },
+    # #  === Box obs space envs ===
+    # "CartPole-v1": {
+    #     "base_kwargs": {},
+    #     "variants": {"main": {}},
+    #     "budget": 100_000,
+    #     "algo": dict(
+    #         gamma=0.99,
+    #         net_arch=[64, 64],
+    #         learning_rate=1e-3,
+    #         batch_size=128,
+    #         buffer_size=100_000,
+    #         learning_starts=1_000,
+    #         train_freq=256,
+    #         gradient_steps=128,
+    #         target_update_interval=10,
+    #         exploration_fraction=0.16,
+    #         exploration_final_eps=0.04,
+    #     ),
+    # },
+    # "LunarLander-v3": {
+    #     "base_kwargs": {},
+    #     "variants": {"main": {}},
+    #     "budget": 500_000,
+    #     "algo": dict(
+    #         gamma=0.99,
+    #         net_arch=[256, 256],
+    #         learning_rate=5e-4,
+    #         batch_size=128,
+    #         buffer_size=50_000,
+    #         learning_starts=1_000,
+    #         train_freq=4,
+    #         gradient_steps=-1,
+    #         target_update_interval=250,
+    #         exploration_fraction=0.12,
+    #         exploration_final_eps=0.1,
+    #     ),
+    # },
     "CarRacing-v3": {
         "base_kwargs": {
             "continuous": False
@@ -196,10 +196,10 @@ def build_config(env_id: str, env_kwargs: dict, spec: dict, obs_type: str):
 
 def eval_dqn(exp_dir: Path, obs_type: str):
     """Box has no Q*/snapshots.npz -> its own eval; Discrete reuses the tabular one."""
-    if obs_type == "Box":
-        evaluate_box(exp_dir)
-    else:
+    if obs_type == "Discrete":
         evaluate_tabular(exp_dir)
+    else:
+        evaluate_box(exp_dir)
 
 
 def train_one(env_id: str, env_kwargs: dict, spec: dict, obs_type: str, label) -> Path:

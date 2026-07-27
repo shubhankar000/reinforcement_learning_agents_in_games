@@ -8,7 +8,7 @@ import torch
 from stable_baselines3 import DQN
 from tqdm.auto import tqdm
 
-from src.dqn.envs import make_env
+from src.deep.envs import make_env
 from src.rng_factory import SeededRNG
 
 # Reference V values from literature
