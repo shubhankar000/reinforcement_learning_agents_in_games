@@ -24,80 +24,80 @@ from src.tabular import figures, plots
 from src.tabular.eval import evaluate as evaluate_tabular
 
 ENVS = {
-    # # === ToyText (Discrete obs). ===
-    # "FrozenLake-v1": {
-    #     "base_kwargs": {"map_name": "4x4"},
-    #     "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
-    #     "budget": 100_000,
-    #     "algo": dict(
-    #         gamma=0.95,
-    #         net_arch=[64, 64],
-    #         learning_rate=1e-3,
-    #         buffer_size=50_000,
-    #         learning_starts=1_000,
-    #     ),
-    # },
-    # "CliffWalking-v1": {
-    #     "base_kwargs": {},
-    #     "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
-    #     "budget": 100_000,
-    #     "algo": dict(
-    #         gamma=0.95,
-    #         net_arch=[64, 64],
-    #         learning_rate=1e-3,
-    #         buffer_size=50_000,
-    #         learning_starts=1_000,
-    #     ),
-    # },
-    # "Taxi-v4": {
-    #     "base_kwargs": {},
-    #     "variants": {"det": {"is_rainy": False}, "slip": {"is_rainy": True}},
-    #     "budget": 500_000,
-    #     "algo": dict(
-    #         gamma=0.95,
-    #         net_arch=[64, 64],
-    #         learning_rate=1e-3,
-    #         buffer_size=50_000,
-    #         learning_starts=1_000,
-    #     ),
-    # },
-    # #  === Box obs space envs ===
-    # "CartPole-v1": {
-    #     "base_kwargs": {},
-    #     "variants": {"main": {}},
-    #     "budget": 100_000,
-    #     "algo": dict(
-    #         gamma=0.99,
-    #         net_arch=[64, 64],
-    #         learning_rate=1e-3,
-    #         batch_size=128,
-    #         buffer_size=100_000,
-    #         learning_starts=1_000,
-    #         train_freq=256,
-    #         gradient_steps=128,
-    #         target_update_interval=10,
-    #         exploration_fraction=0.16,
-    #         exploration_final_eps=0.04,
-    #     ),
-    # },
-    # "LunarLander-v3": {
-    #     "base_kwargs": {},
-    #     "variants": {"main": {}},
-    #     "budget": 500_000,
-    #     "algo": dict(
-    #         gamma=0.99,
-    #         net_arch=[256, 256],
-    #         learning_rate=5e-4,
-    #         batch_size=128,
-    #         buffer_size=50_000,
-    #         learning_starts=1_000,
-    #         train_freq=4,
-    #         gradient_steps=-1,
-    #         target_update_interval=250,
-    #         exploration_fraction=0.12,
-    #         exploration_final_eps=0.1,
-    #     ),
-    # },
+    # === ToyText (Discrete obs). ===
+    "FrozenLake-v1": {
+        "base_kwargs": {"map_name": "4x4"},
+        "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
+        "budget": 100_000,
+        "algo": dict(
+            gamma=0.95,
+            net_arch=[64, 64],
+            learning_rate=1e-3,
+            buffer_size=50_000,
+            learning_starts=1_000,
+        ),
+    },
+    "CliffWalking-v1": {
+        "base_kwargs": {},
+        "variants": {"det": {"is_slippery": False}, "slip": {"is_slippery": True}},
+        "budget": 100_000,
+        "algo": dict(
+            gamma=0.95,
+            net_arch=[64, 64],
+            learning_rate=1e-3,
+            buffer_size=50_000,
+            learning_starts=1_000,
+        ),
+    },
+    "Taxi-v4": {
+        "base_kwargs": {},
+        "variants": {"det": {"is_rainy": False}, "slip": {"is_rainy": True}},
+        "budget": 500_000,
+        "algo": dict(
+            gamma=0.95,
+            net_arch=[64, 64],
+            learning_rate=1e-3,
+            buffer_size=50_000,
+            learning_starts=1_000,
+        ),
+    },
+    #  === Box obs space envs ===
+    "CartPole-v1": {
+        "base_kwargs": {},
+        "variants": {"main": {}},
+        "budget": 100_000,
+        "algo": dict(
+            gamma=0.99,
+            net_arch=[64, 64],
+            learning_rate=1e-3,
+            batch_size=128,
+            buffer_size=100_000,
+            learning_starts=1_000,
+            train_freq=256,
+            gradient_steps=128,
+            target_update_interval=10,
+            exploration_fraction=0.16,
+            exploration_final_eps=0.04,
+        ),
+    },
+    "LunarLander-v3": {
+        "base_kwargs": {},
+        "variants": {"main": {}},
+        "budget": 500_000,
+        "algo": dict(
+            gamma=0.99,
+            net_arch=[256, 256],
+            learning_rate=5e-4,
+            batch_size=128,
+            buffer_size=50_000,
+            learning_starts=1_000,
+            train_freq=4,
+            gradient_steps=-1,
+            target_update_interval=250,
+            exploration_fraction=0.12,
+            exploration_final_eps=0.1,
+        ),
+    },
     "CarRacing-v3": {
         "base_kwargs": {
             "continuous": False
