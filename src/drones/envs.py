@@ -2,7 +2,7 @@
 Create modified env for Pyflyt.
 Apply the following changes to the env, that apply for every env:
 
-1. Strip velocity observations from the obs vector. This is done so that the frame-stack is tested and arch is stressed to infer velocities from the frame-stack as memory. Note: this does no apply to LSTM, as it is infinite horizon by construction.
+1. Strip velocity observations from the obs vector. This is done so that the frame-stack is tested and arch is stressed to infer velocities from the frame-stack as memory. Note: memory does no apply to LSTM, as it is infinite horizon by construction.
 2. Apply a bugfix to the randomness injected to the motor RPM by the PyFlyt env. By default, the noise applies to all 4 motors simultaneously, applying only thrust noise, while what we really want is attitude noise, which is done through applying different noise to all 4 motors.
 """
 
@@ -10,7 +10,7 @@ from typing import Any
 
 import gymnasium as gym
 import numpy as np
-import PyFlyt.gym_envs
+import PyFlyt.gym_envs  # noqa: F401
 from gymnasium.wrappers import FrameStackObservation
 from PyFlyt.core.abstractions.motors import Motors
 from stable_baselines3.common.monitor import Monitor
@@ -81,8 +81,8 @@ def apply_motor_noise_fix():
 
 # ============== gym Wrappers for obs trim ============== #
 # Obs dim range meanings
-# ang_vel 0:3 | quat 4:7 | lin_vel 8:10 | lin_pos 11:13 | prev_action 14:17 | aux 18:21
-# pole_top_pos 22:24 | pole_bot_pos 25:27 | pole_top_vel 28:30 | pole_bot_vel 31:33
+# ang_vel 0:3 | quat 3:7 | lin_vel 7:10 | lin_pos 10:13 | prev_action 13:17 | aux 17:21
+# pole_top_pos 21:24 | pole_bot_pos 24:27 | pole_top_vel 27:30 | pole_bot_vel 30:33
 KEEP = [
     0,
     1,
@@ -104,7 +104,7 @@ KEEP = [
     24,
     25,
     26,
-]  # 20 dims — drops lin_vel and BOTH pole velocities
+]  # 20 dims — drops lin_vel, motor throttle state and BOTH pole vel
 
 
 class StripVelocities(gym.ObservationWrapper):
@@ -114,8 +114,8 @@ class StripVelocities(gym.ObservationWrapper):
 
     def __init__(self, env: gym.Env):
         super().__init__(env)
-        low = env.observation_space.low[KEEP]
-        high = env.observation_space.high[KEEP]
+        low = env.observation_space.low[KEEP].astype(np.float32)
+        high = env.observation_space.high[KEEP].astype(np.float32)
         self.observation_space = gym.spaces.Box(low, high, dtype=np.float32)
 
     def observation(self, observation: Any) -> Any:
@@ -132,10 +132,15 @@ class RandomStartingOrientation(gym.Wrapper):
     def __init__(self, env, spread=0.1):
         super().__init__(env)
         self.spread = spread
+        self._rng = np.random.default_rng()
 
     def reset(self, seed=None, options=None):
-        # NOTE: self.np_random is preseeded by the env based on what we passed in, fully reproducible
-        self.env.unwrapped.start_orn = self.np_random.uniform(
+        # NOTE: Using our own rng separate from the env's physics rng, so that starting tilt is decided by the seed we are giving and nothing else
+
+        if seed is not None:
+            self._rng = np.random.default_rng(seed)
+
+        self.env.unwrapped.start_orn = self._rng.uniform(
             -self.spread, self.spread, size=(1, 3)
         )
         return self.env.reset(seed=seed, options=options)
