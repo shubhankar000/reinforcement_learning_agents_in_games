@@ -1,5 +1,5 @@
 """
-SB3 gives only 1 injection point for custom architectures; the `feature_extractor_class`, and a kwargs dict. So encoder, temporal aggregator
+SB3 gives only 1 injection point for custom architectures; the `feature_extractor_class`, and a kwargs dict. So encoder, temporal architecture
 """
 
 from typing import Any
@@ -12,10 +12,10 @@ from torch import nn
 
 class PerFrameMLP(nn.Module):
     """
-    Encode every frame of a stacked observation with the same small MLP before passing it on to different aggregators for architecture ablation. Only to be used for the Pole Balancing task, which works on Kinematic Telemetry (KIN).
-    Key here is the aggregator consumes the frames (and hence the time history) as memory for the network.
+    Encode every frame of a stacked observation with the same small MLP before passing it on to different architectures for ablation. Only to be used for the Pole Balancing task, which works on Kinematic Telemetry (KIN).
+    Key here is the arch consumes the frames (and hence the time history) as memory for the network.
 
-    obs (B, K, 20) -> (B*K, 20) -> PerFrameMLP (B*K, d) -> (B, K, d) -> aggregator (B, d)
+    obs (B, K, 20) -> (B*K, 20) -> PerFrameMLP (B*K, d) -> (B, K, d) -> arch (B, d)
     Here B is batch size, K is the frame-stack, d is the dim of the MLP, set to 64 in this case.
 
     For LSTM, there is no frame stack, obs is (20,) instead of (k, 20), MLP encoder runs once.
@@ -63,22 +63,22 @@ class FoldedExtractor(BaseFeaturesExtractor):
 
     K is derived by comparing obs rank against the encoders `FRAME_RANK`.
 
-    This is the final class passed into SB3 once the encoder and aggregator is declared.
+    This is the final class passed into SB3 once the encoder and arch is declared.
     """
 
     def __init__(
         self,
         observation_space: gym.spaces.Box,
-        encoder_cls: PerFrameMLP | PerFrameCNN,
-        aggregator_cls=None,
+        encoder_cls: type[PerFrameMLP] | type[PerFrameCNN],
+        architecture_cls=None,
         encoder_kwargs=None,
-        aggregator_kwargs=None,
+        architecture_kwargs=None,
         d: int = 64,
     ):
         super().__init__(observation_space, features_dim=d)
 
         encoder_kwargs = encoder_kwargs if encoder_kwargs else {}
-        aggregator_kwargs = aggregator_kwargs if aggregator_kwargs else {}
+        architecture_kwargs = architecture_kwargs if architecture_kwargs else {}
 
         shape = tuple(observation_space.shape)
         rank = encoder_cls.FRAME_RANK
@@ -91,26 +91,28 @@ class FoldedExtractor(BaseFeaturesExtractor):
             raise ValueError(f"Unsupported obs shape {shape}")
 
         if self.k_frames > 1:
-            if aggregator_cls is None:
-                raise ValueError("Frame stack in obs but no aggregator class provided")
+            if architecture_cls is None:
+                raise ValueError(
+                    "Frame stack in obs but no architecture class provided"
+                )
             # build from class not instance, else weights are tied in parallel seed runs
-            self.aggregator = aggregator_cls(
-                k_frames=self.k_frames, d=d, **aggregator_kwargs
+            self.architecture = architecture_cls(
+                k_frames=self.k_frames, d=d, **architecture_kwargs
             )
-        else:  # This path required param-free aggregators
-            if aggregator_cls is not None:
-                raise ValueError("Obs is 1 frame but aggregator class provided")
-            self.aggregator = None
+        else:
+            if architecture_cls is not None:
+                raise ValueError("Obs is 1 frame but architecture class provided")
+            self.architecture = None
 
         self.norm = nn.LayerNorm(d)
         self.encoder = encoder_cls(self.frame_shape, d, **encoder_kwargs)
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        if self.aggregator is None:
+        if self.architecture is None:
             return self.norm(self.encoder(observations))
 
         B = observations.shape[0]
         x = self.encoder(observations.reshape(B * self.k_frames, *self.frame_shape))
-        x = self.aggregator(x.reshape(B, self.k_frames, -1))
+        x = self.architecture(x.reshape(B, self.k_frames, -1))
 
         return self.norm(x)
