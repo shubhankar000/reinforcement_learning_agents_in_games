@@ -181,9 +181,11 @@ def make_vecenv(
         for _ in range(n_envs)
     ]
 
-    vec_cls = SubprocVecEnv if use_subproc else DummyVecEnv
-
-    venv = vec_cls(env_list)
+    # Require start_method='fork' cos inside a joblib worker the default context is loky.
+    if use_subproc:
+        venv = SubprocVecEnv(env_list, start_method='fork')
+    else:
+        venv = DummyVecEnv(env_list)
 
     if normalize:
         venv = VecNormalize(venv, norm_obs=True, norm_reward=False)
