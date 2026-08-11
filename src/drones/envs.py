@@ -15,6 +15,7 @@ from gymnasium.wrappers import FrameStackObservation
 from PyFlyt.core.abstractions.motors import Motors
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize
+from src.drones.config import KEEP
 
 from src.rng_factory import SeededRNG
 
@@ -80,31 +81,6 @@ def apply_motor_noise_fix():
 
 
 # ============== gym Wrappers for obs trim ============== #
-# Obs dim range meanings
-# ang_vel 0:3 | quat 3:7 | lin_vel 7:10 | lin_pos 10:13 | prev_action 13:17 | aux 17:21
-# pole_top_pos 21:24 | pole_bot_pos 24:27 | pole_top_vel 27:30 | pole_bot_vel 30:33
-KEEP = [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    21,
-    22,
-    23,
-    24,
-    25,
-    26,
-]  # 20 dims — drops lin_vel, motor throttle state and BOTH pole vel
 
 
 class StripVelocities(gym.ObservationWrapper):
@@ -181,9 +157,8 @@ def make_vecenv(
         for _ in range(n_envs)
     ]
 
-    # Require start_method='fork' cos inside a joblib worker the default context is loky.
     if use_subproc:
-        venv = SubprocVecEnv(env_list, start_method='fork')
+        venv = SubprocVecEnv(env_list, start_method="fork")
     else:
         venv = DummyVecEnv(env_list)
 
