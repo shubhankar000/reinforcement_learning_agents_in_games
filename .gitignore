@@ -224,6 +224,7 @@ results/
 *.pdf
 .vscode
 docs/
+wandb/
 
 # TODO unblock run arteafter public publishing
 runs/

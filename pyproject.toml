@@ -20,6 +20,7 @@ dependencies = [
     "swig>=4.4.1",
     "tqdm>=4.68.2",
     "typer>=0.26.7",
+    "wandb>=0.28.1",
 ]
 
 [build-system]
