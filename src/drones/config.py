@@ -108,7 +108,7 @@ class DroneAlgoConfig(BaseConfig):
 class DroneRunConfig(BaseConfig):
     master_seed: int = DEFAULT_SEED
     eval_seed: int = EVAL_SEED
-    step_budget: int = 3_000_000
+    step_budget: int = 5_000_000
     n_runs: int = 10
     n_envs: int = 8  # values for running on 32-core RHUL CPU Compute VM
     n_concurrent: int = 24  # values for running on 32-core RHUL CPU Compute VM
