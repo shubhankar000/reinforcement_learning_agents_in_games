@@ -7,7 +7,7 @@ import numpy as np
 # pole_top_pos 21:24 | pole_bot_pos 24:27 | pole_top_vel 27:30 | pole_bot_vel 30:33
 KEEP = (
     list(range(0, 7)) + list(range(10, 17)) + list(range(21, 27))
-)  # Drop all velocities and last actions
+)  # Drop all velocities (except ang_vel, which is IMU readings and valid) and last actions
 
 DEFAULT_SEED = 101115862
 EVAL_SEED = 28101995
@@ -70,7 +70,7 @@ class DroneEnvConfig(BaseConfig):
     env_id: str = "PyFlyt/QuadX-Pole-Balance-v4"
     task: str = "pole-balance"
     axis2: str = "none"
-    flight_mode: int = -1
+    flight_mode: int = 0
     stripped: bool = True
     spread: float = 0.1
     norm_obs: bool = True
@@ -88,10 +88,10 @@ class DroneAlgoConfig(BaseConfig):
     lr_floor_frac: float = 0.1
     n_steps: int = 2048
     n_epochs: int = 10
-    gamma: float = 0.99
+    gamma: float = 0.997
     gae_lambda: float = 0.95
     clip_range: float = 0.2
-    ent_coef: float = 0.0
+    ent_coef: float = 0.01
     vf_coef: float = 0.5
     max_grad_norm: float = 0.5
     target_kl: float | None = None  # Dont want early stopping

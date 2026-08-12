@@ -165,7 +165,10 @@ def build_venv(arm, cfg: DroneConfig, seed: int, vecnorm_path: Path | None):
         return venv
 
     return VecNormalize(
-        raw, norm_obs=cfg.env_config.norm_obs, norm_reward=cfg.env_config.norm_reward
+        raw,
+        norm_obs=cfg.env_config.norm_obs,
+        norm_reward=cfg.env_config.norm_reward,
+        gamma=cfg.algo_config.gamma,
     )
 
 
@@ -334,6 +337,7 @@ def main():
             **cfg.to_dict(),
         },
     )
+
     meta["wandb_run_id"] = wandb_run.id
     patch_wandb(model)
 

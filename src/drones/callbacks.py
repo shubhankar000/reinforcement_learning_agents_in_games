@@ -104,7 +104,7 @@ class CustomMetricsCallback(BaseCallback):
         n = _GRAD.get("n", 0)
         if n:
             self.logger.record("grad/pre_clip_norm", _GRAD["sum"] / n)
-            self.logger.record("grad/clipped_frac", _GRAD["clipped"] / n)
+            self.logger.record("grad/at_max_norm", _GRAD["clipped"] / n)
             self.logger.record("grad/nonfinite", _GRAD["nonfinite"])
         _GRAD.clear()
 
