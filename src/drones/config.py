@@ -49,18 +49,18 @@ ARMS: dict[str, Arm] = {
         # Pool (faster cos very few/no params)
         # -----------------------
         Arm("meanpool", "ppo", "meanpool", 8, 256, 1.09),
-        Arm("cam", "ppo", "cam", 8, 256, 0.99),
-        Arm("eca", "ppo", "eca", 8, 256, 1.12),
-        Arm("se", "ppo", "se", 8, 256, 1.13),
+        Arm("cam", "ppo", "cam", 8, 256, 1.01),
+        Arm("eca", "ppo", "eca", 8, 256, 1.02),
+        Arm("se", "ppo", "se", 8, 256, 0.99),
         # Sequence over Window
         # ----------------------
         Arm("windowmlp", "ppo", "windowmlp", 8, 256, 1.0),
-        Arm("transformer", "ppo", "transformer", 8, 256, 0.67),
-        Arm("windowlstm", "ppo", "windowlstm", 8, 256, 0.51),  # estimated
+        Arm("transformer", "ppo", "transformer", 8, 256, 0.9),
+        Arm("windowlstm", "ppo", "windowlstm", 8, 256, 0.85),  # estimated
         # K=1 no frame stack
         # --------------------------
-        Arm("memoryless", "ppo", None, 1, 256, 1.2),
-        Arm("episodelstm", "recurrentppo", None, 1, 2048, 0.52),
+        Arm("memoryless", "ppo", None, 1, 256, 1.07),
+        Arm("episodelstm", "recurrentppo", None, 1, 2048, 0.86),
     ]
 }
 
