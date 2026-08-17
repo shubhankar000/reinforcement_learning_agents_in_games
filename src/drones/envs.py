@@ -10,7 +10,7 @@ Task A (pole-balancing):
 
 Task B (waypoint navigation):
     1. Since PyFlyt's reset hook is not general, it hardcodes a begin_reset() call, so drone options cannot be injected.Only full reimplementation can fix this.
-    2.
+    2. WN uses a dict obs with pixels + KIN. Pixels is processed by the CNN as a frame stack, KIN is concated post-aggregator.
 """
 
 from typing import Any
@@ -177,6 +177,7 @@ class PixelDictObs(gym.ObservationWrapper):
 
         # Apply Pillow's ITU-R BT.601 luminance transformation
         grey = 0.299 * rgba[..., 0] + 0.587 * rgba[..., 1] + 0.114 * rgba[..., 2]
+        grey = np.clip(grey, 0, 255)
 
         return grey.astype(
             np.uint8
@@ -325,16 +326,19 @@ def make_vecenv(
 
 
 def make_env_b(
-    seed,
-    n_obstacles=N_OBSTACLES,
-    k_frames=K_FRAMES,
-    camera_resolution=CAMERA_RESOLUTION,
+    seed: int,
+    n_obstacles: int = N_OBSTACLES,
+    k_frames: int = K_FRAMES,
+    camera_resolution: tuple[int, int] = CAMERA_RESOLUTION,
+    flight_mode: int = 0,
 ):
     def build():
         apply_motor_noise_fix()
         # construct env directly since not registered with gym
         env = WaypointsWithObstacles(
-            n_obstacles=N_OBSTACLES, camera_resolution=camera_resolution
+            n_obstacles=n_obstacles,
+            camera_resolution=camera_resolution,
+            flight_mode=flight_mode,
         )
         env = PixelDictObs(env, k_frames)
         env = Monitor(env)
@@ -347,7 +351,11 @@ def make_env_b(
 
 
 def make_vecenv_b(
-    seed, n_envs=8, use_subproc=True, n_obstacles=N_OBSTACLES, k_frames=K_FRAMES
+    seed: int,
+    n_envs=8,
+    use_subproc: bool = True,
+    n_obstacles: int = N_OBSTACLES,
+    k_frames: int = K_FRAMES,
 ):
     rng = SeededRNG(seed)
     env_list = [
