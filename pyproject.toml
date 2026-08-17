@@ -30,9 +30,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src", "vendored_libs"]
 
-
 [tool.uv]
 override-dependencies = ["numpy>=2.4,<2.5"]
+
+[tool.ruff]
+extend-exclude = ['vendored_libs']
+force-exclude = true
 
 [dependency-groups]
 dev = [
