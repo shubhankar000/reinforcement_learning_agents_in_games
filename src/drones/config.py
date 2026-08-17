@@ -5,9 +5,13 @@ import numpy as np
 # Obs dim range meanings
 # ang_vel 0:3 | quat 3:7 | lin_vel 7:10 | lin_pos 10:13 | prev_action 13:17 | aux 17:21
 # pole_top_pos 21:24 | pole_bot_pos 24:27 | pole_top_vel 27:30 | pole_bot_vel 30:33
-KEEP = (
+KEEP_A = (
     list(range(0, 7)) + list(range(10, 17)) + list(range(21, 27))
 )  # Drop all velocities (except ang_vel, which is IMU readings and valid) and last actions
+
+# attitude layout for quaternion angles
+# ang_vel 0:3 | quaternion 3:7 | lin_vel 7:10 | lin_pos 10:13 | action 13:17 | aux 17:21
+KEEP_B = list(range(0, 7)) + list(range(10, 17))  # Drop lin_vel and aux
 
 DEFAULT_SEED = 101115862
 EVAL_SEED = 28101995
@@ -75,7 +79,7 @@ class DroneEnvConfig(BaseConfig):
     spread: float = 0.1
     norm_obs: bool = True
     norm_reward: bool = True  # Tested with False, gradients blow up
-    keep_indices: list[int] = def_fac(lambda: list(KEEP))
+    keep_indices: list[int] = def_fac(lambda: list(KEEP_A))
 
 
 @dataclass
