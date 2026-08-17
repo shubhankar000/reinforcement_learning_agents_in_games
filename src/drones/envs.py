@@ -143,7 +143,6 @@ def make_vecenv(
     seed: int,
     n_envs: int = 8,
     use_subproc=True,
-    normalize=True,
     stripped=True,
     flight_mode=-1,
     k_frames=8,
@@ -161,8 +160,5 @@ def make_vecenv(
         venv = SubprocVecEnv(env_list, start_method="fork")
     else:
         venv = DummyVecEnv(env_list)
-
-    if normalize:
-        venv = VecNormalize(venv, norm_obs=True, norm_reward=False)
 
     return venv

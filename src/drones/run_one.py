@@ -152,7 +152,6 @@ def build_venv(arm, cfg: DroneConfig, seed: int, vecnorm_path: Path | None):
         seed,
         n_envs=cfg.run_config.n_envs,
         use_subproc=True,
-        normalize=False,
         stripped=cfg.env_config.stripped,
         flight_mode=cfg.env_config.flight_mode,
         k_frames=arm.k_frames,
