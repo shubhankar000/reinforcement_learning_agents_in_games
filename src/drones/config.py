@@ -13,6 +13,10 @@ KEEP_A = (
 # ang_vel 0:3 | quaternion 3:7 | lin_vel 7:10 | lin_pos 10:13 | action 13:17 | aux 17:21
 KEEP_B = list(range(0, 7)) + list(range(10, 17))  # Drop lin_vel and aux
 
+# Dimension of vector of KIN for Task B
+# len(KEEP_B) + our FlattenWaypointEnv context of 4 waypoints * 4 dim/waypoint
+VECTOR_DIM = len(KEEP_B) + (4 * 4)  # =30
+
 DEFAULT_SEED = 101115862
 EVAL_SEED = 28101995
 
@@ -44,7 +48,7 @@ class Arm:
     arch: str | None
     k_frames: int
     batch_size: int
-    algo_speed: float  # relative to windowMLP, guesstimated based on backprop. Purely used for queueing longest first for efficient resource use.
+    algo_speed: float  # relative to windowMLP, approx: set after running them. Purely used for queueing longest first for efficient resource use.
 
 
 ARMS: dict[str, Arm] = {
@@ -67,6 +71,7 @@ ARMS: dict[str, Arm] = {
         Arm("episodelstm", "recurrentppo", None, 1, 2048, 0.86),
     ]
 }
+
 
 
 @dataclass
