@@ -233,6 +233,7 @@ class ArtifactCallback(BaseCallback):
 
         Have to use jsonl since parquet is not append friendly. jsonl->parquet conversion done at the end after successful completion
         """
+        keys = {"r", "l", "t"}
         buf = self.model.ep_info_buffer
 
         if not buf:
@@ -245,7 +246,50 @@ class ArtifactCallback(BaseCallback):
             "n_episodes": len(buf),
             "elapsed_s": round(time.perf_counter() - self._t0, 1),
         }
+        remaining = set(buf[0]) - keys
+        for r in sorted(remaining):
+            row[r] = sum(float(e[r]) for e in buf) / len(buf)
 
         with self.log_path.open("a") as f:
             # jsonl is just multi line json
             f.write(json.dumps(row) + "\n")
+
+
+class TaskBMetricsCallback(CustomMetricsCallback):
+    """
+    Adds Task B specific metrics for obstacle collision
+    """
+
+    def _on_step(self) -> bool:
+        super()._on_step()
+
+        for done, info in zip(self.locals["dones"], self.locals["infos"]):
+            if not done:
+                continue
+            if info.get("collision") and not info.get("obstacle_collision"):
+                self._reasons["floor_collision"] = (
+                    self._reasons.get("floor_collision", 0) + 1
+                )
+            if info.get("obstacle_collision"):
+                self._reasons["obstacle_collision"] = (
+                    self._reasons.get("obstacle_collision", 0) + 1
+                )
+
+            not_terminal = not (
+                info.get("collision")
+                or info.get("out_of_bounds")
+                or info.get("env_complete")
+            )
+            if not_terminal:
+                self._reasons["timeout"] = self._reasons.get("timeout", 0) + 1
+
+        return True
+
+    def _on_rollout_end(self) -> None:
+        if self._episodes:
+            for key in ("floor_collision", "obstacle_collision", "timeout"):
+                self.logger.record(
+                    f"term/{key}", self._reasons.get(key, 0) / self._episodes
+                )
+
+        super()._on_rollout_end()
