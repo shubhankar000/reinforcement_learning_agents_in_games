@@ -2,12 +2,12 @@
 SB3 gives only 1 injection point for custom architectures; the `feature_extractor_class`, and a kwargs dict. So encoder, temporal architecture
 """
 
-from typing import Any
-
 import gymnasium as gym
 import torch
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from torch import nn
+
+from src.drones.config import VECTOR_DIM
 
 
 class PerFrameMLP(nn.Module):
@@ -42,17 +42,102 @@ class PerFrameMLP(nn.Module):
 
 class PerFrameCNN(nn.Module):
     """
-    Per Frame CNN feature extractor. TODO this is a stub
+    Per Frame CNN feature extractor.
+    obs (B*K, 96, 96) -> (B*K, d)
+
+    obs already arrives normalised (/255) by SB3's preprocessing
+
+    Modify NatureCNN, add a 1x1 bottleneck at the end to keep CNN params low, so that aggregators can be bulk of the full NN's param counts. Without the bottleneck, the MLP would be 4096x512, which would be 2.1M params just for 1 MLP layer, would dominate the feature extractor.
     """
 
     FRAME_RANK: int = 2
 
-    def __init__(self) -> None:
+    def __init__(self, shape, d=512) -> None:
         super().__init__()
-        raise NotImplementedError
+
+        h, w = shape
+
+        assert (h, w) == (96, 96), (
+            f"drone camera initialised to camera res not (96, 96) but {(h, w)}"
+        )
+
+        self.net = nn.Sequential(
+            nn.Conv2d(1, 32, 8, 4),  # 96 -> 23
+            nn.ReLU(),
+            nn.Conv2d(32, 64, 4, 2),  # 23 -> 10
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, 1),  # 10 -> 8
+            nn.ReLU(),
+            nn.Conv2d(64, 16, 1),  # 1x1 bottleneck
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(1024, d),  # Wouldve been 4096 if not for 1x1 bottleneck
+            nn.ReLU(),
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
+        return self.net(x.unsqueeze(1))
+
+
+class DictFoldedExtractor(BaseFeaturesExtractor):
+    """
+    Folded extractor for Dict{pixels, vector} for Task B
+
+    pixels (B, K, H, W) -> perframeCNN (B, K, d) -> architecture -> (B, d) -> LayerNorm
+    vector (B, 30) concat after aggregator (only 1 entry, at latest point in time, no stack)
+    """
+
+    def __init__(
+        self,
+        observation_space: gym.spaces.Dict,
+        encoder_cls: type[PerFrameMLP] | type[PerFrameCNN],
+        architecture_cls=None,
+        encoder_kwargs=None,
+        architecture_kwargs=None,
+        d: int = 512,
+    ):
+        super().__init__(observation_space, features_dim=d + VECTOR_DIM)
+
+        encoder_kwargs = encoder_kwargs if encoder_kwargs else {}
+        architecture_kwargs = architecture_kwargs if architecture_kwargs else {}
+
+        shape = tuple(observation_space["pixels"].shape)
+        rank = encoder_cls.FRAME_RANK
+
+        if len(shape) == rank:
+            self.k_frames, self.frame_shape = 1, shape
+        elif len(shape) == rank + 1:
+            self.k_frames, self.frame_shape = shape[0], shape[1:]
+        else:
+            raise ValueError(f"Unsupported obs shape {shape}")
+
+        if self.k_frames > 1:
+            if architecture_cls is None:
+                raise ValueError(
+                    "Frame stack in obs but no architecture class provided"
+                )
+            # build from class not instance, else weights are tied in parallel seed runs
+            self.architecture = architecture_cls(
+                k_frames=self.k_frames, d=d, **architecture_kwargs
+            )
+        else:
+            if architecture_cls is not None:
+                raise ValueError("Obs is 1 frame but architecture class provided")
+            self.architecture = None
+
+        self.norm = nn.LayerNorm(d)
+        self.encoder = encoder_cls(self.frame_shape, d, **encoder_kwargs)
+
+    def forward(self, observations: dict[str, torch.Tensor]):
+        px = observations["pixels"]
+        B = px.shape[0]
+
+        x = self.encoder(px.reshape(B * self.k_frames, *self.frame_shape))
+
+        if self.architecture is not None:
+            x = self.architecture(x.reshape(B, self.k_frames, -1))
+
+        return torch.cat([self.norm(x), observations["vector"]], dim=1)
 
 
 class FoldedExtractor(BaseFeaturesExtractor):
