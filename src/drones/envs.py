@@ -25,7 +25,7 @@ from PyFlyt.gym_envs.quadx_envs.quadx_waypoints_env import QuadXWaypointsEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
-from src.drones.config import KEEP_A, KEEP_B
+from src.drones.config import KEEP_A, KEEP_B, VECTOR_DIM
 from src.drones.scene import N_OBSTACLES, build_scene
 from src.rng_factory import SeededRNG
 
@@ -34,7 +34,6 @@ CAMERA_RESOLUTION = (96, 96)
 CAMERA_ANGLE_DEG = 0  # default is 20 uptilt for FPV racing
 CAMERA_FOV_DEG = 90  # PyFlyt default
 K_FRAMES = 8
-VECTOR_DIM = 30
 
 
 # ============== PyFlyt physics fix ============== #
@@ -341,7 +340,16 @@ def make_env_b(
             flight_mode=flight_mode,
         )
         env = PixelDictObs(env, k_frames)
-        env = Monitor(env)
+        env = Monitor(
+            env,
+            info_keywords=(
+                "num_targets_reached",
+                "obstacle_collision",
+                "collision",
+                "out_of_bounds",
+                "env_complete",
+            ),
+        )
         env.reset(seed=seed)
         env.action_space.seed(seed)
 
@@ -356,10 +364,13 @@ def make_vecenv_b(
     use_subproc: bool = True,
     n_obstacles: int = N_OBSTACLES,
     k_frames: int = K_FRAMES,
+    flight_mode: int = 0,
 ):
     rng = SeededRNG(seed)
+
     env_list = [
-        make_env_b(rng.next_seed(), n_obstacles, k_frames) for _ in range(n_envs)
+        make_env_b(rng.next_seed(), n_obstacles, k_frames, flight_mode=flight_mode)
+        for _ in range(n_envs)
     ]
 
     if use_subproc:
