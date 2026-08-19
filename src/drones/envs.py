@@ -330,6 +330,7 @@ def make_env_b(
     k_frames: int = K_FRAMES,
     camera_resolution: tuple[int, int] = CAMERA_RESOLUTION,
     flight_mode: int = 0,
+    max_duration: float = 20.0,
 ):
     def build():
         apply_motor_noise_fix()
@@ -338,6 +339,7 @@ def make_env_b(
             n_obstacles=n_obstacles,
             camera_resolution=camera_resolution,
             flight_mode=flight_mode,
+            max_duration_seconds=max_duration,
         )
         env = PixelDictObs(env, k_frames)
         env = Monitor(
@@ -365,11 +367,18 @@ def make_vecenv_b(
     n_obstacles: int = N_OBSTACLES,
     k_frames: int = K_FRAMES,
     flight_mode: int = 0,
+    max_duration: float = 20.0,
 ):
     rng = SeededRNG(seed)
 
     env_list = [
-        make_env_b(rng.next_seed(), n_obstacles, k_frames, flight_mode=flight_mode)
+        make_env_b(
+            rng.next_seed(),
+            n_obstacles,
+            k_frames,
+            flight_mode=flight_mode,
+            max_duration=max_duration,
+        )
         for _ in range(n_envs)
     ]
 
