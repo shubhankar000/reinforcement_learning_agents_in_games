@@ -17,6 +17,9 @@ KEEP_B = list(range(0, 7)) + list(range(10, 17))  # Drop lin_vel and aux
 # len(KEEP_B) + our FlattenWaypointEnv context of 4 waypoints * 4 dim/waypoint
 VECTOR_DIM = len(KEEP_B) + (4 * 4)  # =30
 
+# Different batch-size for RecurrentPPO for Task B
+RPPO_TASKB_BS = {"episodelstm": 256}
+
 DEFAULT_SEED = 101115862
 EVAL_SEED = 28101995
 
@@ -73,7 +76,6 @@ ARMS: dict[str, Arm] = {
 }
 
 
-
 @dataclass
 class DroneEnvConfig(BaseConfig):
     env_id: str = "PyFlyt/QuadX-Pole-Balance-v4"
@@ -85,6 +87,7 @@ class DroneEnvConfig(BaseConfig):
     norm_obs: bool = True
     norm_reward: bool = True  # Tested with False, gradients blow up
     keep_indices: list[int] = def_fac(lambda: list(KEEP_A))
+    max_duration_seconds: float = 20.0  # in seconds; task a is 20, b is 10, but bump b to 20
 
 
 @dataclass
