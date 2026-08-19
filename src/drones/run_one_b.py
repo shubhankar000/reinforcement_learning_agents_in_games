@@ -19,7 +19,9 @@ import os
 # Must run before torch is imported
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
+
 import argparse
+import dataclasses as dc
 import json
 import shutil
 import sys
@@ -35,9 +37,10 @@ from stable_baselines3.common.vec_env import VecNormalize
 
 import wandb
 from src.drones.architectures import ARCHITECTURES
-from src.drones.callbacks import ArtifactCallback, CustomMetricsCallback
+from src.drones.callbacks import ArtifactCallback, TaskBMetricsCallback
 from src.drones.config import (
     ARMS,
+    RPPO_TASKB_BS,
     Arm,
     DroneConfig,
     FloorLRDecay,
@@ -155,6 +158,7 @@ def build_venv(arm, cfg: DroneConfig, seed: int, vecnorm_path: Path | None):
         use_subproc=True,
         flight_mode=cfg.env_config.flight_mode,
         k_frames=arm.k_frames,
+        max_duration=cfg.env_config.max_duration_seconds,
         # spread=cfg.env_config.spread,
     )
 
@@ -233,7 +237,7 @@ def main():
 
     cfg = DroneConfig()
 
-    # Overrides for Task B:
+    # ======== Overrides for Task B ======== #
     cfg.algo_config.lstm_hidden_size = 512
     cfg.algo_config.d = 512
     cfg.algo_config.net_arch_pi = [256, 256]
@@ -242,6 +246,15 @@ def main():
     cfg.run_config.device = args.device
     cfg.run_config.wandb_project = "msc-diss-pyflyt-taskb"
 
+    # Changes after test runs
+    # PPO clips too much with high KL without these changes
+    cfg.algo_config.learning_rate = 1e-4
+    cfg.algo_config.target_kl = 0.1
+    cfg.algo_config.n_epochs = 4
+    cfg.algo_config.ent_coef = 0.01 # WIP
+
+    # ======== End Overrides ======== #
+
     if args.steps is not None:
         # scale all the schedulers with the step budget
         cfg.run_config.step_budget = args.steps
@@ -249,6 +262,8 @@ def main():
         cfg.run_config.checkpoint_every = max(1, args.steps // 4)
 
     arm = ARMS[args.arm]
+    # Replace RPPO BS for Task B
+    arm = dc.replace(arm, batch_size=RPPO_TASKB_BS.get(arm.name, arm.batch_size))
     seed = seed_for(cfg.run_config.master_seed, args.run_index)
 
     run_dir = (
@@ -364,7 +379,7 @@ def main():
         )
         model.learn(
             remaining,
-            callback=[callback, CustomMetricsCallback()],
+            callback=[callback, TaskBMetricsCallback()],
             reset_num_timesteps=(resume_from is None),
             progress_bar=False,
         )
