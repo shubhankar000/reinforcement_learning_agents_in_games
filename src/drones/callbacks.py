@@ -260,12 +260,20 @@ class TaskBMetricsCallback(CustomMetricsCallback):
     Adds Task B specific metrics for obstacle collision
     """
 
+    def __init__(self):
+        super().__init__()
+
+        self.targets_reached = 0
+
     def _on_step(self) -> bool:
         super()._on_step()
 
         for done, info in zip(self.locals["dones"], self.locals["infos"]):
             if not done:
                 continue
+
+            self.targets_reached += info.get("num_targets_reached")
+
             if info.get("collision") and not info.get("obstacle_collision"):
                 self._reasons["floor_collision"] = (
                     self._reasons.get("floor_collision", 0) + 1
@@ -291,5 +299,10 @@ class TaskBMetricsCallback(CustomMetricsCallback):
                 self.logger.record(
                     f"term/{key}", self._reasons.get(key, 0) / self._episodes
                 )
+
+            mean = self.targets_reached / self._episodes
+            self.logger.record(
+                "rollout/targets_frac", mean / 4
+            )  # hardcoding 4 targets.
 
         super()._on_rollout_end()
