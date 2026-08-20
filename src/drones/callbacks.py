@@ -301,6 +301,7 @@ class TaskBMetricsCallback(CustomMetricsCallback):
                 )
 
             mean = self.targets_reached / self._episodes
+            self.logger.record("rollout/targets_mean", mean)
             self.logger.record(
                 "rollout/targets_frac", mean / 4
             )  # hardcoding 4 targets.
