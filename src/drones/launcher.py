@@ -10,10 +10,10 @@ import argparse
 import subprocess
 import sys
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from src.drones.config import ARMS, DroneConfig, run_key, Arm
+from src.drones.config import ARMS, Arm, DroneConfig, run_key
 
 POLL_RATE = 5
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

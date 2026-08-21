@@ -192,9 +192,10 @@ def scene_params() -> dict:
 
 
 if __name__ == "__main__":
+    import time
+
     import gymnasium as gym
     import PyFlyt.gym_envs
-    import time
 
     env = gym.make("PyFlyt/QuadX-Waypoints-v4", render_mode="human")
 

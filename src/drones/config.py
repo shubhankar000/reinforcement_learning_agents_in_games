@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
-from src.config import BaseConfig
+
 import numpy as np
+
+from src.config import BaseConfig
 
 # Obs dim range meanings
 # ang_vel 0:3 | quat 3:7 | lin_vel 7:10 | lin_pos 10:13 | prev_action 13:17 | aux 17:21

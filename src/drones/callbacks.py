@@ -2,8 +2,8 @@
 Snapshot, rolling checkpoints and incremental metrics logging.
 """
 
-import math
 import json
+import math
 import time
 from pathlib import Path
 

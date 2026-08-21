@@ -13,8 +13,8 @@ Task B (waypoint navigation):
     2. WN uses a dict obs with pixels + KIN. Pixels is processed by the CNN as a frame stack, KIN is concated post-aggregator.
 """
 
-from typing import Any
 import collections
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -28,7 +28,6 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from src.drones.config import KEEP_A, KEEP_B, VECTOR_DIM
 from src.drones.scene import N_OBSTACLES, build_scene
 from src.rng_factory import SeededRNG
-
 
 CAMERA_RESOLUTION = (96, 96)
 CAMERA_ANGLE_DEG = 0  # default is 20 uptilt for FPV racing

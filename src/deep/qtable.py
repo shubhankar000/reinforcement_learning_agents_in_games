@@ -1,5 +1,5 @@
-from stable_baselines3 import DQN
 import torch as th
+from stable_baselines3 import DQN
 
 
 def create_qtable(model: DQN, n_states):

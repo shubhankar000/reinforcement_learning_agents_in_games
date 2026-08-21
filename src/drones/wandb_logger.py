@@ -3,9 +3,11 @@ Make SB3 write to wandb as well.
 """
 
 import sys
+
 import numpy as np
-import wandb
 from stable_baselines3.common.logger import HumanOutputFormat, KVWriter, Logger
+
+import wandb
 
 
 class WandBWriter(KVWriter):

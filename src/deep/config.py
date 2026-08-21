@@ -1,6 +1,8 @@
-from src.config import BaseConfig, DEFAULT_SEED
 from dataclasses import dataclass, field
+
 import gymnasium as gym
+
+from src.config import DEFAULT_SEED, BaseConfig
 
 default = lambda x: field(default=x)  # noqa
 

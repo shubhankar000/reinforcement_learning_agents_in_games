@@ -12,7 +12,7 @@ import gymnasium as gym
 import numpy as np
 
 from src.tabular.config import ToyTextEnvConfig
-from src.tabular.validation import value_iteration, policy_evaluation
+from src.tabular.validation import policy_evaluation, value_iteration
 
 ENVS = ["FrozenLake-v1", "CliffWalking-v1", "Taxi-v4"]
 ENV_KWARGS = [{"map_name": "4x4", "reward_schedule": [1, 0, 0]}, {}, {}]
