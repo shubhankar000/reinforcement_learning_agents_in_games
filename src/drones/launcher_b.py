@@ -1,7 +1,7 @@
 """
 The orchestrator that runs the whole ablation for Task B
 
-It does this by repeatedly calling run_one.py
+It does this by repeatedly calling run_one_b.py
 
 Uses subprocess.Popen so that if 1 arm fails, the whole thing doesnt fail.
 """
@@ -10,10 +10,12 @@ import argparse
 import subprocess
 import sys
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from src.drones.config import ARMS, DroneConfig, run_key, Arm
+import torch
+
+from src.drones.config import ARMS, Arm, DroneConfig, run_key
 
 POLL_RATE = 5
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -58,14 +60,6 @@ def spawn_arm(arm: Arm, run_index: int, log_dir: Path, *args):
 def main():
     cfg = DroneConfig()
 
-    # ======== Overrides for Task B ======== #
-    cfg.env_config.task = "waypoint"
-    cfg.run_config.n_runs = 5  # Task A was 10, but Task B is expensive
-    cfg.run_config.n_concurrent = (
-        4  # TODO change this when running on GPU VM. THis is for laptop
-    )
-    # ======== End Overrides ======== #
-
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="Print the queue and exit")
     ap.add_argument(
@@ -76,12 +70,26 @@ def main():
     )
     args = ap.parse_args()
 
+    # ======== Overrides for Task B ======== #
+    cfg.env_config.task = "waypoint"
+    cfg.run_config.n_runs = 1  # Task A was 10, but Task B is expensive
+    cfg.run_config.n_concurrent = (
+        1  # TODO change this when running on GPU VM. THis is for laptop
+    )
+
+    cfg.run_config.device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"[DEVICE] {cfg.run_config.device}")
+    # ======== End Overrides ======== #
+
     arms = sorted(ARMS)
     runs = list(range(cfg.run_config.n_runs))
     queue = build_queue(arms, runs)
     n_concurrent = cfg.run_config.n_concurrent
 
     child_args = ["--steps", str(args.steps)] if args.steps is not None else []
+    child_args += ["--device", cfg.run_config.device]
+    child_args += ["--task", cfg.env_config.task]
+
     log_dir = PROJECT_ROOT / "runs" / "drones" / cfg.env_config.task / "_logs"
 
     print(f"{len(queue)} jobs, {n_concurrent} concurrency, longest first")
@@ -124,7 +132,6 @@ def main():
                 mins = (time.perf_counter() - started) / 60
 
                 if process.returncode == 0:
-                    log_path.unlink(missing_ok=True)
                     print(
                         f"[{finished}/{len(queue)}] ok   {arm.name} run_{run_index:02d}  ({mins:.0f}m)"
                     )
@@ -137,9 +144,9 @@ def main():
             time.sleep(POLL_RATE)
 
     finally:
-        for process in running:
-            handler.close()
+        for process, (_, _, _, handler, _) in running.items():
             process.terminate()
+            handler.close()
 
     print(f"\nfinished in {(time.perf_counter() - t0) / 3600:.1f} h")
 
