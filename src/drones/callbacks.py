@@ -272,7 +272,7 @@ class TaskBMetricsCallback(CustomMetricsCallback):
             if not done:
                 continue
 
-            self.targets_reached += info.get("num_targets_reached")
+            self.targets_reached += info.get("num_targets_reached", 0)
 
             if info.get("collision") and not info.get("obstacle_collision"):
                 self._reasons["floor_collision"] = (
@@ -305,5 +305,6 @@ class TaskBMetricsCallback(CustomMetricsCallback):
             self.logger.record(
                 "rollout/targets_frac", mean / 4
             )  # hardcoding 4 targets.
+            self.targets_reached = 0
 
         super()._on_rollout_end()
