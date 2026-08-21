@@ -22,7 +22,7 @@ VECTOR_DIM = len(KEEP_B) + (4 * 4)  # = 33
 # Different batch-size for RecurrentPPO for Task B
 RPPO_TASKB_BS = {"episodelstm": 256}
 
-DEFAULT_SEED = 101115862
+DEFAULT_SEED = 1092026
 EVAL_SEED = 28101995
 
 def_fac = lambda x: field(default_factory=x)  # noqa

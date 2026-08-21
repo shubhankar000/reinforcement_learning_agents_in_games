@@ -21,7 +21,7 @@ import numpy as np
 import pybullet_data
 from PyFlyt.core import Aviary
 
-N_OBSTACLES = 4  # number of obstacles in each scene
+N_OBSTACLES = 5  # number of obstacles in each scene
 MIN_OBJ_SEP = 1.2  # in meters, obstacle<->obstacle separation
 MIN_OBJ_WP_SEP = 0.8  # obstacle<->waypoint separation
 HALF_EXTENT = (0.15, 0.34)  # pybullet convention, use to define body's radius

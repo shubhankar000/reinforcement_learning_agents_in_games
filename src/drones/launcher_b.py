@@ -73,7 +73,7 @@ def main():
     # ======== Overrides for Task B ======== #
     cfg.env_config.task = "waypoint"
     cfg.run_config.n_runs = 5  # Task A was 10, but Task B is expensive
-    cfg.run_config.n_concurrent = 4
+    cfg.run_config.n_concurrent = 12
 
     cfg.run_config.device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"[DEVICE] {cfg.run_config.device}")
