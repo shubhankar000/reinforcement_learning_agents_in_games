@@ -40,6 +40,7 @@ from src.drones.architectures import ARCHITECTURES
 from src.drones.callbacks import ArtifactCallback, TaskBMetricsCallback
 from src.drones.config import (
     ARMS,
+    KEEP_B,
     RPPO_TASKB_BS,
     Arm,
     DroneConfig,
@@ -48,8 +49,9 @@ from src.drones.config import (
     run_key,
     snapshot_steps,
 )
-from src.drones.envs import make_vecenv_b
+from src.drones.envs import WaypointsWithObstacles, make_vecenv_b
 from src.drones.extractors import DictFoldedExtractor, PerFrameCNN
+from src.drones.scene import N_OBSTACLES, scene_params
 from src.drones.wandb_logger import patch_wandb
 from src.rng_factory import SeededRNG
 
@@ -146,7 +148,7 @@ def build_model(arm: Arm, cfg: DroneConfig, venv, seed: int):
     )
 
 
-def build_venv(arm, cfg: DroneConfig, seed: int, vecnorm_path: Path | None):
+def build_venv(arm: Arm, cfg: DroneConfig, seed: int, vecnorm_path: Path | None):
     """
     Raw vec env, then either fresh normalisation or the saved statistics.
 
@@ -159,6 +161,7 @@ def build_venv(arm, cfg: DroneConfig, seed: int, vecnorm_path: Path | None):
         flight_mode=cfg.env_config.flight_mode,
         k_frames=arm.k_frames,
         max_duration=cfg.env_config.max_duration_seconds,
+        n_obstacles=cfg.env_config.n_obstacles,
         # spread=cfg.env_config.spread,
     )
 
@@ -195,9 +198,12 @@ def experiment_fields(config: dict) -> dict:
     }
 
 
-def build_meta(arm, cfg: DroneConfig, seed: int, run_index: int) -> dict:
+def build_meta(arm: Arm, cfg: DroneConfig, seed: int, run_index: int) -> dict:
     return {
         "arm": arm.name,
+        "arch": arm.arch,
+        "k_frames": arm.k_frames,
+        "batch_size": arm.batch_size,
         "run_key": run_key(arm, cfg.env_config.axis2),
         "run_index": run_index,
         "seed": seed,
@@ -216,6 +222,7 @@ def build_meta(arm, cfg: DroneConfig, seed: int, run_index: int) -> dict:
         "wandb_run_id": None,
         # -1 means never resumed. Replaced by the actual step on the first resume.
         "resumed_at_steps": [-1],
+        "scene_params": scene_params() if cfg.env_config.n_obstacles else None,
     }
 
 
@@ -231,6 +238,8 @@ def main():
         help="Override the step budget, for tests only.",
     )
     ap.add_argument("--device", default="cuda", choices=("cuda", "cpu"))
+    ap.add_argument("--obstacles", default=None, type=int)
+    ap.add_argument("--task", default=None)
     args = ap.parse_args()
 
     torch.set_num_threads(1)
@@ -243,7 +252,10 @@ def main():
     cfg.algo_config.net_arch_pi = [256, 256]
     cfg.algo_config.net_arch_vf = [256, 256]
     cfg.env_config.task = "waypoint"
+    cfg.env_config.env_id = f"{WaypointsWithObstacles.__module__}.{WaypointsWithObstacles.__qualname__}"  # unused, needed for meta.json
+    cfg.env_config.n_obstacles = N_OBSTACLES
     cfg.run_config.device = args.device
+    cfg.env_config.keep_indices = list(KEEP_B)  # unused, needed for meta.json
     cfg.run_config.wandb_project = "msc-diss-pyflyt-taskb"
 
     # Changes after test runs
@@ -251,9 +263,15 @@ def main():
     cfg.algo_config.learning_rate = 1e-4
     cfg.algo_config.target_kl = 0.1
     cfg.algo_config.n_epochs = 4
-    cfg.algo_config.ent_coef = 0.01 # WIP
+    cfg.algo_config.ent_coef = 0.01  # WIP
 
     # ======== End Overrides ======== #
+
+    if args.task is not None:
+        cfg.env_config.task = args.task
+
+    if args.obstacles is not None:
+        cfg.env_config.n_obstacles = args.obstacles
 
     if args.steps is not None:
         # scale all the schedulers with the step budget
@@ -336,10 +354,15 @@ def main():
 
     n_params = sum(p.numel() for p in model.policy.parameters())
 
+    # Task B gets its own group name, for separation
+    run_group = arm.name + "-taskb"
+    if cfg.env_config.axis2 not in (None, "none"):
+        run_group += "-" + cfg.env_config.axis2
+
     wandb_run = wandb.init(
         project=cfg.run_config.wandb_project,
         mode=cfg.run_config.wandb_mode,
-        group=arm.name,  # use wandb groups by arm
+        group=run_group,  # use wandb groups by arm
         name=f"{arm.name}-seed{args.run_index:02d}",
         tags=[
             cfg.env_config.task,
