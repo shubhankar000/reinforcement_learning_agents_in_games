@@ -21,7 +21,7 @@ import numpy as np
 import pybullet_data
 from PyFlyt.core import Aviary
 
-N_OBSTACLES = 12  # number of obstacles in each scene
+N_OBSTACLES = 4  # number of obstacles in each scene
 MIN_OBJ_SEP = 1.2  # in meters, obstacle<->obstacle separation
 MIN_OBJ_WP_SEP = 0.8  # obstacle<->waypoint separation
 HALF_EXTENT = (0.15, 0.34)  # pybullet convention, use to define body's radius
@@ -172,6 +172,23 @@ def build_scene(
     )
     ids = spawn_obstacles(p, obstacles)
     return ids
+
+
+def scene_params() -> dict:
+    """
+    Return scene parameters as a dict for meta.json and eval guard
+    """
+    return {
+        # "n_obstacles": N_OBSTACLES, # pulled from run_one rather than here.
+        "min_object_separation": MIN_OBJ_SEP,
+        "min_object_wp_separation": MIN_OBJ_WP_SEP,
+        "half_extent": HALF_EXTENT,
+        "luma": LUMA,
+        "rejection_max_tries": REJECTION_MAX_TRIES,
+        "shapes": SHAPES,
+        "distance_minimum": DIST_MIN,
+        "dome_fraction": DOME_FRAC,
+    }
 
 
 if __name__ == "__main__":

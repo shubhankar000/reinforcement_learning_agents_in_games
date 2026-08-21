@@ -11,11 +11,11 @@ KEEP_A = (
 
 # attitude layout for quaternion angles
 # ang_vel 0:3 | quaternion 3:7 | lin_vel 7:10 | lin_pos 10:13 | action 13:17 | aux 17:21
-KEEP_B = list(range(0, 7)) + list(range(10, 17))  # Drop lin_vel and aux
+KEEP_B = list(range(0, 17))  # Keep lin_vel, fails without
 
 # Dimension of vector of KIN for Task B
 # len(KEEP_B) + our FlattenWaypointEnv context of 4 waypoints * 4 dim/waypoint
-VECTOR_DIM = len(KEEP_B) + (4 * 4)  # =30
+VECTOR_DIM = len(KEEP_B) + (4 * 4)  # = 33
 
 # Different batch-size for RecurrentPPO for Task B
 RPPO_TASKB_BS = {"episodelstm": 256}
@@ -87,7 +87,8 @@ class DroneEnvConfig(BaseConfig):
     norm_obs: bool = True
     norm_reward: bool = True  # Tested with False, gradients blow up
     keep_indices: list[int] = def_fac(lambda: list(KEEP_A))
-    max_duration_seconds: float = 20.0  # in seconds; task a is 20, b is 10, but bump b to 20
+    max_duration_seconds: float = 20.0  # in seconds
+    n_obstacles: int = 0  # task a unaffected and honest
 
 
 @dataclass

@@ -46,6 +46,7 @@ from src.drones.config import (
 )
 from src.drones.envs import make_vecenv
 from src.drones.extractors import FoldedExtractor, PerFrameMLP
+from src.drones.scene import scene_params
 from src.drones.wandb_logger import patch_wandb
 from src.rng_factory import SeededRNG
 
@@ -190,9 +191,12 @@ def experiment_fields(config: dict) -> dict:
     }
 
 
-def build_meta(arm, cfg: DroneConfig, seed: int, run_index: int) -> dict:
+def build_meta(arm: Arm, cfg: DroneConfig, seed: int, run_index: int) -> dict:
     return {
         "arm": arm.name,
+        "arch": arm.arch,
+        "k_frames": arm.k_frames,
+        "batch_size": arm.batch_size,
         "run_key": run_key(arm, cfg.env_config.axis2),
         "run_index": run_index,
         "seed": seed,
@@ -211,6 +215,7 @@ def build_meta(arm, cfg: DroneConfig, seed: int, run_index: int) -> dict:
         "wandb_run_id": None,
         # -1 means never resumed. Replaced by the actual step on the first resume.
         "resumed_at_steps": [-1],
+        "scene_params": scene_params() if cfg.env_config.n_obstacles else None,
     }
 
 
