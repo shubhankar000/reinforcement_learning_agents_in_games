@@ -137,6 +137,9 @@ class DroneRunConfig(BaseConfig):
     wandb_project: str = "msc-diss-pyflyt-archs"
     wandb_mode: str = "online"
 
+    eval_episodes: int = 20
+    eval_n_jobs: int = 14
+
 
 @dataclass
 class DroneConfig(BaseConfig):
