@@ -247,11 +247,11 @@ def make_plots(env_id: str, variant_dirs: dict, obs_type: str):
 
     # Plot eval
     eval_curves = DISCRETE_EVAL_CURVES if obs_type == "Discrete" else BOX_EVAL_CURVES
-    for metric, normalize, ylabel, fname in tqdm(
+    for metric, normalise, ylabel, fname in tqdm(
         eval_curves, desc="curves", leave=False
     ):
         scores, frames = plots.load_score_tensor(
-            variant_dirs, metric=metric, normalize=normalize
+            variant_dirs, metric=metric, normalise=normalise
         )
         plots.plot_sample_efficiency(scores, frames, out_dir / fname, ylabel=ylabel)
 

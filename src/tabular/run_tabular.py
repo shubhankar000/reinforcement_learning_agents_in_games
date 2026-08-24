@@ -115,11 +115,11 @@ def make_plots(env_id: str, variant_dirs: dict):
         plots.plot_sample_efficiency(scores, frames, out_dir / fname, ylabel=ylabel)
 
     # Plot eval
-    for metric, normalize, ylabel, fname in tqdm(
+    for metric, normalise, ylabel, fname in tqdm(
         EVAL_CURVES, desc="curves", leave=False
     ):
         scores, frames = plots.load_score_tensor(
-            variant_dirs, metric=metric, normalize=normalize
+            variant_dirs, metric=metric, normalise=normalise
         )
         plots.plot_sample_efficiency(scores, frames, out_dir / fname, ylabel=ylabel)
 

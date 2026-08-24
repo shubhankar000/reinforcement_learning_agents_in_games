@@ -24,7 +24,7 @@ def anchors(df: pd.DataFrame):
     return last["v_star_s0"].iloc[0], last["v_random_s0"].iloc[0]
 
 
-def load_score_tensor(exp_dirs: dict, metric: str = "success_rate", normalize=False):
+def load_score_tensor(exp_dirs: dict, metric: str = "success_rate", normalise=False):
     """
     Load per-variant metric data for rliable.
 
@@ -41,7 +41,7 @@ def load_score_tensor(exp_dirs: dict, metric: str = "success_rate", normalize=Fa
         assert np.array_equal(frames, frame_ref), f"Checkpoint grid mismatch: {d}"
 
         mat = pivot(df, metric)
-        if normalize:
+        if normalise:
             v_star_s0, v_random_s0 = anchors(df)
             mat = (mat - v_random_s0) / (v_star_s0 - v_random_s0)
 
