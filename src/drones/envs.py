@@ -281,10 +281,15 @@ def make_env(
     flight_mode=-1,
     k_frames=K_FRAMES,
     spread=0.1,
+    render_mode=None,
 ):
     def build():
         apply_motor_noise_fix()
-        env = gym.make("PyFlyt/QuadX-Pole-Balance-v4", flight_mode=flight_mode)
+        env = gym.make(
+            "PyFlyt/QuadX-Pole-Balance-v4",
+            flight_mode=flight_mode,
+            render_mode=render_mode,
+        )
         if stripped:
             env = StripVelocities(env)
         env = RandomStartingOrientation(env, spread)
@@ -330,6 +335,7 @@ def make_env_b(
     camera_resolution: tuple[int, int] = CAMERA_RESOLUTION,
     flight_mode: int = 0,
     max_duration: float = 20.0,
+    render_mode=None,
 ):
     def build():
         apply_motor_noise_fix()
@@ -339,6 +345,7 @@ def make_env_b(
             camera_resolution=camera_resolution,
             flight_mode=flight_mode,
             max_duration_seconds=max_duration,
+            render_mode=render_mode,
         )
         env = PixelDictObs(env, k_frames)
         env = Monitor(
