@@ -5,7 +5,7 @@ There is no flight mode or 'best agent' for task a, it has to be analysed from t
 
 v_star derivation:
     per agent step: reward=-0.1
-    env_step_ratio = pysics_hz/agent_hz = 120/40 = 3
+    env_step_ratio = control_hz/agent_hz = 120/40 = 3
     reward_per_physics_step = 1 - lin_dist - ang_dist - leaningness - 0.01*yaw_rate^2
 => maximum reward per agent step = -0.1 + 3*1.0 = 2.9
    (lin_dist=ang_dist=leaningness=yaw_rate=0)
