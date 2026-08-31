@@ -389,5 +389,5 @@ def main(fresh=False):
 
 
 if __name__ == "__main__":
-    FRESH = True  # TODO Change after dev done
+    FRESH = False
     main(FRESH)
