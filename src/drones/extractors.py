@@ -84,7 +84,7 @@ class DictFoldedExtractor(BaseFeaturesExtractor):
     Folded extractor for Dict{pixels, vector} for Task B
 
     pixels (B, K, H, W) -> perframeCNN (B, K, d) -> architecture -> (B, d) -> LayerNorm
-    vector (B, 30) concat after aggregator (only 1 entry, at latest point in time, no stack)
+    vector (B, 33) concat after aggregator (only 1 entry, at latest point in time, no stack)
     """
 
     def __init__(
