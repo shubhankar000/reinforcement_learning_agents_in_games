@@ -19,6 +19,26 @@ def make_comparison(env_id: str):
     out.mkdir(parents=True, exist_ok=True)
 
     methods = {f"{a}-{v}": find_latest(env_id, a, v) for a in ALGOS for v in VARIANTS}
+
+    for v in VARIANTS:
+        exp = {"tabular": methods[f"tabular-{v}"], "dqn": methods[f"dqn-{v}"]}
+        scores, frames = plots.load_score_tensor(exp, metric="eval_return_mean")
+        plots.plot_sample_efficiency(
+            scores,
+            frames,
+            out / f"{v}_sample_efficiency.png",
+            ylabel="IQM Return",
+            scale_from_frac=0.1,
+        )
+        scores, frames = plots.load_score_tensor(exp, metric="success_rate")
+        plots.plot_sample_efficiency(
+            scores,
+            frames,
+            out / f"{v}_success.png",
+            ylabel="IQM Success Rate",
+            scale_from_frac=0.1,
+        )
+
     final = plots.final_scores_normalized(methods)
     pairs = {
         f"DQN,Tabular ({v})": (final[f"dqn-{v}"], final[f"tabular-{v}"])
