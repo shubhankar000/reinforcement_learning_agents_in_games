@@ -68,12 +68,15 @@ def load_train_tensor(exp_dirs: dict, metric: str):
     return scores, frame_ref
 
 
-def plot_sample_efficiency(scores, frames, out_path: Path, ylabel="IQM Success Rate"):
+def plot_sample_efficiency(
+    scores, frames, out_path: Path, ylabel="IQM Success Rate", scale_from_frac=None
+):
     iqm = lambda s: np.array(  # noqa: E731
         [metrics.aggregate_iqm(s[..., f]) for f in range(s.shape[-1])]
     )
     iqm_scores, iqm_cis = rly.get_interval_estimates(scores, iqm, reps=2000)
-    plot_utils.plot_sample_efficiency_curve(
+
+    ax = plot_utils.plot_sample_efficiency_curve(
         frames,
         iqm_scores,
         iqm_cis,
@@ -82,6 +85,20 @@ def plot_sample_efficiency(scores, frames, out_path: Path, ylabel="IQM Success R
         ylabel=ylabel,
         legend=True,
     )
+
+    # cap ylim to post-warmup data
+    if scale_from_frac is not None:
+        mask = frames >= scale_from_frac * frames.max()
+        lo = min(ci[0][mask].min() for ci in iqm_cis.values())
+        hi = max(ci[1][mask].max() for ci in iqm_cis.values())
+
+        y0, y1 = ax.get_ylim()
+        non_degenerate = hi - lo > 1e-6 * max(1, abs(hi))
+        dominated = (y1 - y0) > 3 * (hi - lo)
+
+        if non_degenerate and dominated:
+            pad = 0.05 * (hi - lo)
+            ax.set_ylim(lo - pad, hi + pad)
 
     plt.savefig(out_path, bbox_inches="tight", dpi=150)
     plt.close()
@@ -147,7 +164,10 @@ def plot_probability_of_improvement(pairs: dict, out_path: Path):
     Only for dqn
     """
     probs, cis = rly.get_interval_estimates(
-        pairs, metrics.probability_of_improvement, reps=2000
+        pairs,
+        metrics.probability_of_improvement,
+        reps=2000,
+        random_state=np.random.RandomState(67),
     )
     plot_utils.plot_probability_of_improvement(probs, cis)
     plt.savefig(out_path, bbox_inches="tight", dpi=150)
