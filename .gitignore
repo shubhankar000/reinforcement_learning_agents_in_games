@@ -225,6 +225,7 @@ results/
 .vscode
 docs/
 wandb/
+submission/
 
 # TODO unblock run arteafter public publishing
 runs/

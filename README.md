@@ -2,7 +2,7 @@
 
 This is a dissertation for MSc Machine Learning at Royal Holloway, University of London. 
 
-Submitted 1st September 2026
+Submitted 6th September 2026
 
 This project is an architecture ablation (9 arms) for PPO on two PyFlyt drone tasks, preceded by TQL/DQN validation on 6 gym environments.
 
