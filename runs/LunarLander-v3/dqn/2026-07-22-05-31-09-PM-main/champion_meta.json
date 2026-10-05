@@ -1,0 +1,12 @@
+{
+  "run_no": "run_05",
+  "env_steps": 134709,
+  "metric": "eval_return_mean",
+  "selected_return_mean": 274.59173977500006,
+  "select_master_seed": 67,
+  "verified_return_mean": 258.7755732305144,
+  "verified_return_se": 4.364547859520707,
+  "verified_success_rate": 0.89,
+  "verified_M": 200,
+  "verified_master_seed": 420
+}

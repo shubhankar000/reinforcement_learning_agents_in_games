@@ -1,0 +1,73 @@
+{
+  "task": "waypoint",
+  "v_star_s0": 548.8614294099999,
+  "v_random_s0": -93.51558741000002,
+  "pid": {
+    "n_episodes": 100,
+    "return_mean": 548.8614294099999,
+    "return_std": 161.248877252918,
+    "return_median": 577.2634410000001,
+    "return_min": -97.297583,
+    "return_max": 752.195398,
+    "length_mean": 325.8,
+    "targets_mean": 3.74,
+    "targets_max": 4.0,
+    "rate_complete": 0.91,
+    "rate_obstacle_collision": 0.09,
+    "rate_floor_collision": 0.0,
+    "rate_out_of_bounds": 0.0,
+    "rate_timeout": 0.0
+  },
+  "random": {
+    "n_episodes": 100,
+    "return_mean": -93.51558741000002,
+    "return_std": 23.7631740668425,
+    "return_median": -100.0358115,
+    "return_min": -105.866583,
+    "return_max": 14.495272,
+    "length_mean": 39.0,
+    "targets_mean": 0.05,
+    "targets_max": 1.0,
+    "rate_complete": 0.0,
+    "rate_obstacle_collision": 0.04,
+    "rate_floor_collision": 0.04,
+    "rate_out_of_bounds": 0.92,
+    "rate_timeout": 0.0
+  },
+  "env_facts": {
+    "n_obstacles": 5,
+    "num_targets": 4,
+    "goal_reach_distance": 0.2,
+    "flight_dome_size": 5.0,
+    "max_steps": 600,
+    "env_step_ratio": 4,
+    "camera_resolution": [
+      96,
+      96
+    ]
+  },
+  "scene_params": {
+    "min_object_separation": 1.2,
+    "min_object_wp_separation": 0.8,
+    "half_extent": [
+      0.15,
+      0.34
+    ],
+    "luma": [
+      0.1,
+      0.85
+    ],
+    "rejection_max_tries": 600,
+    "shapes": [
+      "box",
+      "sphere",
+      "cylinder"
+    ],
+    "distance_minimum": 1.0,
+    "dome_fraction": 0.9
+  },
+  "pid_flight_mode": 7,
+  "agent_flight_mode": 0,
+  "n_episodes": 100,
+  "seed": 28101995
+}

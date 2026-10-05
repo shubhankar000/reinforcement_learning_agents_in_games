@@ -1,0 +1,24 @@
+{
+  "run_config": {
+    "master_seed": 67,
+    "lr": 0.1,
+    "step_budget": 500000,
+    "n_runs": 10,
+    "checkpoint_points": 100,
+    "checkpoint_type": "log"
+  },
+  "env_config": {
+    "action_space": 6,
+    "obs_space": 500,
+    "env_id": "Taxi-v4",
+    "env_kwargs": {
+      "is_rainy": false
+    }
+  },
+  "algo_config": {
+    "epsilon": 0.1,
+    "gamma": 0.95,
+    "e_floor": 0.01,
+    "decay_steps": 250000
+  }
+}

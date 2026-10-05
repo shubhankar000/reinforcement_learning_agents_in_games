@@ -1,0 +1,2 @@
+{"step": 16384, "ep_rew_mean": -94.25316806000001, "ep_len_mean": 38.59, "n_episodes": 100, "elapsed_s": 38.5, "collision": 0.37, "env_complete": 0.0, "num_targets_reached": 0.01, "obstacle_collision": 0.1, "out_of_bounds": 0.63}
+{"step": 32768, "ep_rew_mean": -93.88011368, "ep_len_mean": 41.52, "n_episodes": 100, "elapsed_s": 166.1, "collision": 0.26, "env_complete": 0.0, "num_targets_reached": 0.02, "obstacle_collision": 0.12, "out_of_bounds": 0.74}

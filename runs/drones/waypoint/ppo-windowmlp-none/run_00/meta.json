@@ -1,0 +1,114 @@
+{
+  "arm": "windowmlp",
+  "arch": "windowmlp",
+  "k_frames": 8,
+  "batch_size": 256,
+  "run_key": "ppo-windowmlp-none",
+  "run_index": 0,
+  "seed": 3614057227,
+  "config": {
+    "run_config": {
+      "master_seed": 1092026,
+      "eval_seed": 28101995,
+      "step_budget": 5000000,
+      "n_runs": 10,
+      "n_envs": 8,
+      "n_concurrent": 24,
+      "device": "cuda",
+      "checkpoint_every": 100000,
+      "keep_checkpoints": 2,
+      "n_snapshots": 20,
+      "snapshot_start": 100000,
+      "wandb_project": "msc-diss-pyflyt-taskb",
+      "wandb_mode": "online"
+    },
+    "env_config": {
+      "env_id": "src.drones.envs.WaypointsWithObstacles",
+      "task": "waypoint",
+      "axis2": "none",
+      "flight_mode": 0,
+      "stripped": true,
+      "spread": 0.1,
+      "norm_obs": true,
+      "norm_reward": true,
+      "keep_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "max_duration_seconds": 20.0,
+      "n_obstacles": 5
+    },
+    "algo_config": {
+      "d": 512,
+      "net_arch_pi": [
+        256,
+        256
+      ],
+      "net_arch_vf": [
+        256,
+        256
+      ],
+      "learning_rate": 0.0001,
+      "lr_floor_frac": 0.1,
+      "n_steps": 2048,
+      "n_epochs": 4,
+      "gamma": 0.997,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5,
+      "target_kl": 0.1,
+      "lstm_hidden_size": 512,
+      "shared_lstm": true,
+      "enable_critic_lstm": false
+    }
+  },
+  "versions": {
+    "stable_baselines3": "2.9.0",
+    "sb3_contrib": "2.9.0",
+    "torch": "2.13.0",
+    "numpy": "2.4.6",
+    "gymnasium": "1.3.0",
+    "PyFlyt": "0.29.0"
+  },
+  "wandb_run_id": "iptv27fg",
+  "resumed_at_steps": [
+    -1
+  ],
+  "scene_params": {
+    "min_object_separation": 1.2,
+    "min_object_wp_separation": 0.8,
+    "half_extent": [
+      0.15,
+      0.34
+    ],
+    "luma": [
+      0.1,
+      0.85
+    ],
+    "rejection_max_tries": 600,
+    "shapes": [
+      "box",
+      "sphere",
+      "cylinder"
+    ],
+    "distance_minimum": 1.0,
+    "dome_fraction": 0.9
+  }
+}

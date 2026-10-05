@@ -1,0 +1,25 @@
+{
+  "task": "pole-balance",
+  "v_star_s0": 2320.0,
+  "v_random_s0": -80.70412006000001,
+  "random": {
+    "n_episodes": 100,
+    "return_mean": -80.70412006000001,
+    "return_std": 9.500804369064065,
+    "return_median": -78.877823,
+    "return_min": -121.013007,
+    "return_max": -66.950973,
+    "length_mean": 22.48,
+    "length_max": 36.0
+  },
+  "env_facts": {
+    "flight_dome_size": 3.0,
+    "max_steps": 800,
+    "env_step_ratio": 3,
+    "max_per_agent_step": 2.9,
+    "max_episode_steps": 800
+  },
+  "agent_flight_mode": 0,
+  "n_episodes": 100,
+  "seed": 28101995
+}

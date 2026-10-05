@@ -1,0 +1,25 @@
+{
+  "run_config": {
+    "master_seed": 67,
+    "lr": 0.1,
+    "step_budget": 100000,
+    "n_runs": 10,
+    "checkpoint_points": 100,
+    "checkpoint_type": "log"
+  },
+  "env_config": {
+    "action_space": 4,
+    "obs_space": 16,
+    "env_id": "FrozenLake-v1",
+    "env_kwargs": {
+      "map_name": "4x4",
+      "is_slippery": false
+    }
+  },
+  "algo_config": {
+    "epsilon": 0.1,
+    "gamma": 0.95,
+    "e_floor": 0.01,
+    "decay_steps": 50000
+  }
+}

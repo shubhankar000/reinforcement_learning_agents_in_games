@@ -1,0 +1,20 @@
+[
+  {
+    "name": "champion_2",
+    "seed": 3923535749,
+    "return": 765.8536585365694,
+    "steps": 1000,
+    "track_completion": 0.8658536585365854,
+    "terminated": false,
+    "truncated": true
+  },
+  {
+    "name": "champion_3",
+    "seed": 3212275105,
+    "return": 901.8999999999909,
+    "steps": 981,
+    "track_completion": 1.0,
+    "terminated": true,
+    "truncated": false
+  }
+]

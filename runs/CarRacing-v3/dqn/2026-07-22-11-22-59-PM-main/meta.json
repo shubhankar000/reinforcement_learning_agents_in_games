@@ -1,0 +1,49 @@
+{
+  "run_config": {
+    "master_seed": 67,
+    "step_budget": 500000,
+    "n_runs": 5,
+    "checkpoint_points": 50,
+    "checkpoint_type": "log",
+    "n_envs": 1,
+    "device": "cuda",
+    "n_jobs": 2
+  },
+  "env_config": {
+    "action_space": 5,
+    "obs_space": [
+      96,
+      96,
+      3
+    ],
+    "obs_space_low": null,
+    "obs_space_high": null,
+    "obs_type": "Image",
+    "env_id": "CarRacing-v3",
+    "env_kwargs": {
+      "continuous": false
+    }
+  },
+  "algo_config": {
+    "policy": "CnnPolicy",
+    "learning_rate": 0.0001,
+    "buffer_size": 50000,
+    "learning_starts": 10000,
+    "batch_size": 32,
+    "gamma": 0.99,
+    "train_freq": 4,
+    "gradient_steps": 1,
+    "target_update_interval": 1000,
+    "exploration_fraction": 0.2,
+    "exploration_final_eps": 0.05,
+    "net_arch": [
+      512
+    ]
+  },
+  "versions": {
+    "stable_baselines3": "2.9.0",
+    "torch": "2.13.0",
+    "numpy": "2.5.1",
+    "gymnasium": "1.3.0"
+  }
+}
